@@ -1,0 +1,122 @@
+# ekf config
+sample_frequency: 40.0
+
+control_frequency: 20.0
+
+debug: false
+
+map_frame_id: map
+
+odom_frame_id: odom
+
+# 体坐标系
+base_link_frame_id: base_footprint
+
+# 世界坐标系
+world_frame_id: odom
+
+# 传感器延迟
+sensor_timeout: 0.3
+
+#传感器失灵
+sensor_dead: 5.0
+
+# 局部轨迹延迟
+local_path_timeout: 1.0
+
+####################################################################### odom #
+
+odom0: odom
+
+odom0_pose_rejection_threshold: 5.0
+
+odom0_twist_rejection_threshold: 1.0
+
+odom0_config: [false, false, false,
+              false, false, false,
+              true, false, false,
+              false, false, true,
+              false, false, false]
+
+odom1: /localization/kinematic_state
+
+odom1_pose_rejection_threshold: 5.0
+
+odom1_twist_rejection_threshold: 1.0
+
+odom1_config: [true, true, false,
+              false, false, true,
+              false, false, false,
+              false, false, false,
+              false, false, false]
+
+odom2: /carla/odom
+
+odom2_pose_rejection_threshold: 5.0
+
+odom2_twist_rejection_threshold: 1.0
+
+odom2_config: [true, true, false,
+              false, false, true,
+              false, false, false,
+              false, false, false,
+              false, false, false]
+
+####################################################################### pose #
+
+pose0: /test/pose
+
+pose0_rejection_threshold: 2
+
+pose0_config: [true, true, false,
+              false, false, false,
+              false, false, false,
+              false, false, false,
+              false, false, false]
+
+####################################################################### twist #
+
+twist0: test/twist
+
+twist0_twist_rejection_threshold: 2.0
+
+twist0_config: [false, false, false,
+                false, false, false,
+                true, true, true,
+                false, false, false,
+                false, false, false]
+
+twist1: carla/twist
+
+twist1_twist_rejection_threshold: 2.0
+
+twist1_config: [false, false, false,
+                false, false, false,
+                true, false, false,
+                false, false, true,
+                false, false, false]
+
+####################################################################### local path #
+
+# localpath0: test/localpath
+
+localpath0: /optimalTrajectory/localOptimalPath
+
+# controller config
+control_frequency: 20.0 # 优先使用controller_params.yaml中设置的频率
+
+# 前视时间
+t_delta_max: 0.3
+t_delta_min: 0.3
+
+mpc0: slow_mode
+
+mpc0_state_error_weight: [1.5, 1.5, 0.2] # default 1.5, 1.5, 0.2
+
+mpc0_input_weight: [0.5, 0.05] # default 0.5, 0.05
+
+mpc1: faster_mode
+
+mpc1_state_error_weight: [1.0, 0.5, 0.5]
+
+mpc1_input_weight: [0.2, 0.07]

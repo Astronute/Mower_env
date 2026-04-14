@@ -1,0 +1,15 @@
+# controller config
+control_rate: 30.0
+
+# 轴距(前轴中心到后轴中心)
+wheel_base: 0.7
+
+tau_w: 0.01
+
+tau_v: 0.01
+
+max_vel: 1.0
+min_vel: -1.0
+
+max_w: 0.785
+min_w: -0.785

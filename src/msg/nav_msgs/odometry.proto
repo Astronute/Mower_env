@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package nav_msgs;
+
+import "std_msgs/header.proto";
+import "geometry_msgs/pose.proto";
+import "geometry_msgs/twist.proto";
+
+
+message Odometry{
+    std_msgs.Header header = 1;
+
+    string child_frame_id = 2;
+
+    geometry_msgs.PoseWithCovariance pose = 3;
+
+    geometry_msgs.TwistWithCovariance twist = 4;
+}

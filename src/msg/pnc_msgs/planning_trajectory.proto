@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pnc_msgs;
+
+import "pnc_msgs/point_vec.proto";
+import "std_msgs/header.proto";
+
+message PlanningTrajectory{
+    std_msgs.Header = 1;
+
+    int32 id = 2;
+
+    repeated pnc_msgs.PointVec8f trajectory = 3;
+    
+    double length = 4;
+}

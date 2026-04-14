@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package pnc_msgs;
+
+message PointVec4f{
+    double x = 1;
+    double y = 2;
+    double z = 3;
+    double w = 4;
+}
+
+message PointVec8f{
+    double x = 1;
+    double y = 2;
+    double yaw = 3;
+    double kappa = 4;
+    double s = 5;
+    double t = 6;
+    double v = 7;
+    double w = 8; 
+}

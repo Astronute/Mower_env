@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package geometry_msgs;
+
+import "std_msgs/header.proto";
+import "geometry_msgs/point.proto";
+import "geometry_msgs/quaternion.proto";
+
+
+message Pose{
+    geometry_msgs.Point position = 1;
+
+    geometry_msgs.Quaternion orientation = 2;
+}
+
+message PoseStamped{
+    std_msgs.Header header = 1;
+
+    geometry_msgs.Pose pose = 2;
+}
+
+message PoseWithCovariance{
+    geometry_msgs.Pose pose = 1;
+
+    repeated double covariance = 2;
+}
+
+message PoseWithCovarianceStamped{
+    std_msgs.Header header = 1;
+
+    geometry_msgs.PoseWithCovariance pose = 2;
+}
