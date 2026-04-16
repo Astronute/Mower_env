@@ -68,7 +68,7 @@ namespace CB {
             return false;
         }
 
-        zmq_publisher_.initialize("tcp://*:5557");
+        zmq_publisher_.initialize("tcp://*:5556");
 
         // 定时器线程，处理传感器
         const std::chrono::duration<double> timespan{1.0 / sample_frequency_};
@@ -85,7 +85,7 @@ namespace CB {
     bool RosController::loadParams(){
         try{
             #ifdef USE_SIM
-            filter_config_yaml_ = YAML::LoadFile("/home/tom/Mower_env/src/motion_control/params/filter_params.yaml");
+            filter_config_yaml_ = YAML::LoadFile("/home/yat/Mower_env/src/motion_control/params/filter_params.yaml");
             #else
             filter_config_yaml_ = YAML::LoadFile("/home/kickpi/sim_ws/src/motion_control/params/filter_params.yaml");
             #endif
@@ -352,10 +352,12 @@ namespace CB {
 
         }while(more_params);
 
+        zmq_sub_cfgs.push_back(sub_cfg);
         zmq_subscriber_.initialize(zmq_sub_cfgs);
         zmq_subscriber_.setMessageCallback([this](const std::string& msg, const std::string& topic) {
             this->zmq_message_callback(msg, topic);}
         );
+        zmq_subscriber_.start();
         std::cout << "param load success." << std::endl;
         return true;
     }
@@ -373,7 +375,7 @@ namespace CB {
         if(pose_callback_info.update_sum_ > 0){
             pos_ptr->mutable_header()->CopyFrom(msg->header());
             pos_ptr->mutable_pose()->CopyFrom(msg->pose());
-            std::cout << "odometryCallback " << pos_ptr->pose().pose().position().x() << " - " << pos_ptr->pose().pose().position().y() << std::endl;
+            // std::cout << "odometryCallback " << pos_ptr->pose().pose().position().x() << " - " << pos_ptr->pose().pose().position().y() << std::endl;
 
             poseCallback(pos_ptr, pose_callback_info, world_frame_id_, base_link_frame_id_, false);
         }
@@ -563,7 +565,7 @@ namespace CB {
 
     void RosController::zmq_message_callback(const std::string& message, const std::string& topic){
         std::string topic_name = topic_name_map_[topic];
-
+        
         if(topic_name.compare(0, 4, "odom") == 0){
             CallBackInfo call_backinfo_pose = topic_callbackinfo_map_[topic_name + "_pose"];
             CallBackInfo call_backinfo_twist = topic_callbackinfo_map_[topic_name + "_twist"];
@@ -614,7 +616,7 @@ namespace CB {
 
         if(!measurement_queue_.empty()){
             while(!measurement_queue_.empty()){
-                MeasurementPtr measurement = measurement_queue_.top();
+                MeasurementPtr measurement = measurement_queue_.front();
                 if(current_time < measurement->time_){
                     break;
                 }
@@ -1038,6 +1040,7 @@ namespace CB {
         const SysTimePoint & time
     ){
         MeasurementPtr meas = std::make_shared<Measurement>();
+        // std::cout << toSec(time) << std::endl;
         meas->time_ = time;
         meas->topic_name_ = topic_name;
         meas->mahalanobis_thresh_ = mahalanobis_thresh;

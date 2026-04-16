@@ -4,6 +4,7 @@
 #include <memory>
 #include <queue>
 #include <chrono>
+#include <iostream>
 #include "Eigen/Dense"
 
 using SysTimePoint = std::chrono::time_point<std::chrono::system_clock>;
@@ -14,7 +15,7 @@ namespace CB {
 	struct Measurement {
 		Measurement() {}
 
-		SysTimePoint time_;
+		SysTimePoint time_ = SysTimePoint{std::chrono::seconds{0}};
 
 		std::string topic_name_;
 

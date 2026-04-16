@@ -35,6 +35,13 @@ add_executable(motion_control
     ${SRC_LIST_} 
 )
 
+set_target_properties(motion_control PROPERTIES
+    BUILD_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib"
+    INSTALL_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib"
+    # 设置 RPATH 优先于 LD_LIBRARY_PATH
+    LINK_FLAGS "-Wl,--enable-new-dtags"
+)
+
 target_link_libraries(motion_control 
   ${PROTOBUF_LIBRARIES}
   libzmq.so
@@ -46,5 +53,5 @@ target_link_libraries(motion_control
 
 install(TARGETS
   motion_control
-  DESTINATION /home/tom/Mower_env/install/${PROJECT_NAME}
+  DESTINATION /home/yat/Mower_env/install/${PROJECT_NAME}
 )

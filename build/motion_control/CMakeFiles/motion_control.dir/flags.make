@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/tom/Mower_env/src/motion_control/include -I/home/tom/Mower_env/src/motion_control/../msg/generated -I/home/tom/Mower_env/src/motion_control/../third_party/cppzmq-master -I/usr/local/include/eigen3 -I/home/tom/Mower_env/src/motion_control/../third_party/osqp/include -I/home/tom/Mower_env/src/motion_control/../third_party/osqp-eigen/include -I/home/tom/Mower_env/src/motion_control/../third_party/yaml-cpp-master/include
+CXX_INCLUDES = -I/home/yat/Mower_env/src/motion_control/include -I/home/yat/Mower_env/src/motion_control/../msg/generated -I/home/yat/Mower_env/src/motion_control/../third_party/cppzmq-master -I/usr/local/include/eigen3 -I/home/yat/Mower_env/src/motion_control/../third_party/osqp/include -I/home/yat/Mower_env/src/motion_control/../third_party/osqp-eigen/include -I/home/yat/Mower_env/src/motion_control/../third_party/yaml-cpp-master/include
 
 CXX_FLAGS = -std=gnu++17
 

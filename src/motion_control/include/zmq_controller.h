@@ -397,7 +397,7 @@ namespace CB{
 
         std::string world_frame_id_;
 
-        std::priority_queue<MeasurementPtr, std::vector<MeasurementPtr>, Measurement> measurement_queue_;
+        std::queue<MeasurementPtr> measurement_queue_;
 
 		fixedQueue<std::vector<TrajPoint>> trajectory_queue_;
 

@@ -1,4 +1,4 @@
-# Install script for directory: /home/tom/Mower_env
+# Install script for directory: /home/yat/Mower_env
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,7 +44,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/tom/Mower_env/build/motion_control/cmake_install.cmake")
+  include("/home/yat/Mower_env/build/motion_control/cmake_install.cmake")
 
 endif()
 
@@ -56,5 +56,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/tom/Mower_env/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/yat/Mower_env/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

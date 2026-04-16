@@ -138,6 +138,7 @@ void ZmqSubscriber::subscriberWorker() {
 void ZmqSubscriber::processMessage(zmq::socket_t& socket, int subscriber_id) {
     zmq::message_t topic_msg;
     zmq::message_t content_msg;
+
     try {
         // 接收消息
         auto topic_recv_result = socket.recv(topic_msg, zmq::recv_flags::none);
@@ -150,7 +151,7 @@ void ZmqSubscriber::processMessage(zmq::socket_t& socket, int subscriber_id) {
             std::string msg_content(static_cast<char*>(content_msg.data()), content_msg.size());
             
             // 显示接收到的消息
-            std::cout << "[Subscriber " << subscriber_id << "] Received: " << topic << std::endl;
+            // std::cout << "[Subscriber " << subscriber_id << "] Received: " << topic << std::endl;
             
             // 调用用户自定义回调
             if (message_callback_) {

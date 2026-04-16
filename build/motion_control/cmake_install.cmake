@@ -1,4 +1,4 @@
-# Install script for directory: /home/tom/Mower_env/src/motion_control
+# Install script for directory: /home/yat/Mower_env/src/motion_control
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -43,29 +43,29 @@ if(NOT DEFINED CMAKE_OBJDUMP)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  if(EXISTS "$ENV{DESTDIR}/home/tom/Mower_env/install/motion_control/motion_control" AND
-     NOT IS_SYMLINK "$ENV{DESTDIR}/home/tom/Mower_env/install/motion_control/motion_control")
+  if(EXISTS "$ENV{DESTDIR}/home/yat/Mower_env/install/motion_control/motion_control" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}/home/yat/Mower_env/install/motion_control/motion_control")
     file(RPATH_CHECK
-         FILE "$ENV{DESTDIR}/home/tom/Mower_env/install/motion_control/motion_control"
-         RPATH "")
+         FILE "$ENV{DESTDIR}/home/yat/Mower_env/install/motion_control/motion_control"
+         RPATH "/home/yat/Mower_env/src/motion_control/../third_party/osqp-eigen/lib:/home/yat/Mower_env/src/motion_control/../third_party/osqp/lib")
   endif()
   list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
-   "/home/tom/Mower_env/install/motion_control/motion_control")
+   "/home/yat/Mower_env/install/motion_control/motion_control")
   if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
   if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
-  file(INSTALL DESTINATION "/home/tom/Mower_env/install/motion_control" TYPE EXECUTABLE FILES "/home/tom/Mower_env/build/motion_control/motion_control")
-  if(EXISTS "$ENV{DESTDIR}/home/tom/Mower_env/install/motion_control/motion_control" AND
-     NOT IS_SYMLINK "$ENV{DESTDIR}/home/tom/Mower_env/install/motion_control/motion_control")
+  file(INSTALL DESTINATION "/home/yat/Mower_env/install/motion_control" TYPE EXECUTABLE FILES "/home/yat/Mower_env/build/motion_control/motion_control")
+  if(EXISTS "$ENV{DESTDIR}/home/yat/Mower_env/install/motion_control/motion_control" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}/home/yat/Mower_env/install/motion_control/motion_control")
     file(RPATH_CHANGE
-         FILE "$ENV{DESTDIR}/home/tom/Mower_env/install/motion_control/motion_control"
-         OLD_RPATH "/home/tom/Mower_env/src/motion_control/../third_party/libzmq-4.3.5/build/lib:/home/tom/Mower_env/src/motion_control/../third_party/osqp/lib:/home/tom/Mower_env/src/motion_control/../third_party/osqp-eigen/lib:/home/tom/Mower_env/src/motion_control/../third_party/yaml-cpp-master/lib:"
-         NEW_RPATH "")
+         FILE "$ENV{DESTDIR}/home/yat/Mower_env/install/motion_control/motion_control"
+         OLD_RPATH "/home/yat/Mower_env/src/motion_control/../third_party/osqp-eigen/lib:/home/yat/Mower_env/src/motion_control/../third_party/osqp/lib:/home/yat/Mower_env/src/motion_control/../third_party/libzmq-4.3.5/build/lib:/home/yat/Mower_env/src/motion_control/../third_party/yaml-cpp-master/lib:"
+         NEW_RPATH "/home/yat/Mower_env/src/motion_control/../third_party/osqp-eigen/lib:/home/yat/Mower_env/src/motion_control/../third_party/osqp/lib")
     if(CMAKE_INSTALL_DO_STRIP)
-      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}/home/tom/Mower_env/install/motion_control/motion_control")
+      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}/home/yat/Mower_env/install/motion_control/motion_control")
     endif()
   endif()
 endif()
