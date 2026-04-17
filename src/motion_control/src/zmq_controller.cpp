@@ -186,20 +186,33 @@ namespace CB {
 
         /*-------------------------------- zmq subscribe-----------------------------------------*/
         std::vector<SubscriberConfig> zmq_sub_cfgs;
-        SubscriberConfig sub_cfg;
-        if(filter_config_yaml_["zmq_sub_port"]){
-            std::string port = filter_config_yaml_["zmq_sub_port"].as<std::string>();
-            sub_cfg.address = port;
-            std::cout << "controller node subscriber bind to: " << port << std::endl;
-        }
-        else{
-            std::cout << "missing param 'zmq_sub_port'" << std::endl;
-            return false;
-        }
+
+        size_t port_ind = 0;
+        bool more_params = false;
+        do{
+            std::stringstream ss;
+            ss << "zmq_sub_port" << port_ind++;
+            std::string port_id = ss.str();
+            std::string port_addr;
+            if(filter_config_yaml_[port_id]){
+                more_params = true;
+                port_addr = filter_config_yaml_[port_id].as<std::string>();
+            }
+            else{
+                more_params = false;
+            }
+
+            if(more_params){
+                SubscriberConfig sub_cfg;
+                sub_cfg.address = port_addr;
+                zmq_sub_cfgs.push_back(sub_cfg);
+                std::cout << "controller node subscriber " << port_id << " bind to: " << port_addr << std::endl;
+            }
+        }while(more_params);
 
         // odom subscribe
         size_t topic_ind = 0;
-        bool more_params = false;
+        more_params = false;
         do{
             std::stringstream ss;
             ss << "odom" << topic_ind++;
@@ -214,6 +227,18 @@ namespace CB {
             }
 
             if(more_params){
+                int port_idx = 0;
+                try {
+                    std::string str = filter_config_yaml_[odom_name + "_port"].as<std::string>().substr(4);
+                    port_idx = std::stoi(str);
+                    if(port_idx > zmq_sub_cfgs.size()){
+                        std::cout << odom_name << " port id out of range" << std::endl;
+                        return false;
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "Port parse error: " << e.what() << std::endl;
+                }
+
                 double pose_mahalanobis_threshold = filter_config_yaml_[odom_name + "_pose_rejection_threshold"].as<double>();
                 double twist_mahalanobis_threshold = filter_config_yaml_[odom_name + "_twist_rejection_threshold"].as<double>();
 
@@ -233,7 +258,7 @@ namespace CB {
                     topic_callbackinfo_map_[odom_name + "_twist"] = twist_callback_info;
                     topic_name_map_[odom_topic] = odom_name;
 
-                    sub_cfg.topics.push_back(odom_topic);
+                    zmq_sub_cfgs[port_idx].topics.push_back(odom_topic);
                 }
                 else{
                     std::cout << odom_topic << " all update variables are false " << std::endl;
@@ -252,16 +277,27 @@ namespace CB {
             std::string pose_topic;
             if(filter_config_yaml_[pose_name]){
                 more_params = true;
+                pose_topic = filter_config_yaml_[pose_name].as<std::string>();
             }
             else{
                 more_params = false;
             }
 
             if(more_params){
-                pose_topic = filter_config_yaml_[pose_name].as<std::string>();
+                int port_idx = 0;
+                try {
+                    std::string str = filter_config_yaml_[pose_name + "_port"].as<std::string>().substr(4);
+                    port_idx = std::stoi(str);
+                    if(port_idx > zmq_sub_cfgs.size()){
+                        std::cout << pose_name << " port id out of range" << std::endl;
+                        return false;
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "Port parse error: " << e.what() << std::endl;
+                }
+
                 double pose_rejection_threshold = filter_config_yaml_[pose_name + "_rejection_threshold"].as<double>();
                 std::vector<bool> pose_update_mask = loadUpdateConfig(pose_name);
-
                 std::fill(pose_update_mask.begin() + POSITION_V_OFFSET, pose_update_mask.begin() + POSITION_V_OFFSET + TWIST_SIZE, 0);
                 std::fill(pose_update_mask.begin() + POSITION_A_OFFSET, pose_update_mask.begin() + POSITION_A_OFFSET + ACCELERATION_SIZE, 0);
 
@@ -271,7 +307,7 @@ namespace CB {
                     topic_callbackinfo_map_[pose_name] = callback_info;
                     topic_name_map_[pose_topic] = pose_name;
 
-                    sub_cfg.topics.push_back(pose_topic);
+                    zmq_sub_cfgs[port_idx].topics.push_back(pose_topic);
                 }
             }
             else{
@@ -297,6 +333,18 @@ namespace CB {
             }
 
             if(more_params){
+                int port_idx = 0;
+                try {
+                    std::string str = filter_config_yaml_[twist_name + "_port"].as<std::string>().substr(4);
+                    port_idx = std::stoi(str);
+                    if(port_idx > zmq_sub_cfgs.size()){
+                        std::cout << twist_name << " port id out of range" << std::endl;
+                        return false;
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "Port parse error: " << e.what() << std::endl;
+                }
+
                 double twist_mahalanobis_threshold = filter_config_yaml_[twist_name + "_twist_rejection_threshold"].as<double>();
                 std::vector<bool> update_vec = loadUpdateConfig(twist_name);
                 std::fill(update_vec.begin() + POSITION_OFFSET, update_vec.begin() + POSITION_OFFSET + POSE_SIZE, 0);
@@ -307,7 +355,7 @@ namespace CB {
                     topic_callbackinfo_map_[twist_name] = callback_info;
                     topic_name_map_[twist_topic] = twist_name;
 
-                    sub_cfg.topics.push_back(twist_topic);
+                    zmq_sub_cfgs[port_idx].topics.push_back(twist_topic);
                 }
                 else{
                     std::cout << twist_topic << " all update variables are false " << std::endl;
@@ -333,9 +381,21 @@ namespace CB {
             }
 
             if(more_params){
+                int port_idx = 0;
+                try {
+                    std::string str = filter_config_yaml_[localpath_name + "_port"].as<std::string>().substr(4);
+                    port_idx = std::stoi(str);
+                    if(port_idx > zmq_sub_cfgs.size()){
+                        std::cout << localpath_name << " port id out of range" << std::endl;
+                        return false;
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "Port parse error: " << e.what() << std::endl;
+                }
+
                 topic_name_map_[localpath_topic] = localpath_name;
 
-                sub_cfg.topics.push_back(localpath_topic);
+                zmq_sub_cfgs[port_idx].topics.push_back(localpath_topic);
             }
 
         }while(more_params);
@@ -371,7 +431,7 @@ namespace CB {
 
         }while(more_params);
 
-        zmq_sub_cfgs.push_back(sub_cfg);
+        
         zmq_subscriber_.initialize(zmq_sub_cfgs);
         zmq_subscriber_.setMessageCallback([this](const std::string& msg, const std::string& topic) {
             this->zmq_message_callback(msg, topic);}

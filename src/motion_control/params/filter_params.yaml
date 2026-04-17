@@ -25,10 +25,12 @@ sensor_dead: 5.0
 local_path_timeout: 1.0
 
 # 控制信号发布端口
-zmq_pub_port: tcp://*:5556
+zmq_pub_port: tcp://*:5557
 
 # 消息订阅端口
-zmq_sub_port: tcp://localhost:5556
+zmq_sub_port0: tcp://localhost:5556
+
+zmq_sub_port1: tcp://localhost:5555
 
 ####################################################################### controller config #
 
@@ -38,10 +40,11 @@ control_frequency: 20.0 # 优先使用controller_params.yaml中设置的频率
 t_delta_max: 0.3
 t_delta_min: 0.3
 
-
 ####################################################################### odom #
 
 odom0: odom
+
+odom0_port: port0
 
 odom0_pose_rejection_threshold: 5.0
 
@@ -55,6 +58,8 @@ odom0_config: [false, false, false,
 
 odom1: /localization/kinematic_state
 
+odom1_port: port0
+
 odom1_pose_rejection_threshold: 5.0
 
 odom1_twist_rejection_threshold: 1.0
@@ -66,6 +71,8 @@ odom1_config: [true, true, false,
               false, false, false]
 
 odom2: /carla/odom
+
+odom2_port: port1
 
 odom2_pose_rejection_threshold: 5.0
 
@@ -81,6 +88,8 @@ odom2_config: [true, true, false,
 
 pose0: /test/pose
 
+pose_port: port0
+
 pose0_rejection_threshold: 2
 
 pose0_config: [true, true, false,
@@ -91,21 +100,13 @@ pose0_config: [true, true, false,
 
 ####################################################################### twist #
 
-twist0: test/twist
+twist0: /carla/twist
+
+twist0_port: port1
 
 twist0_twist_rejection_threshold: 2.0
 
 twist0_config: [false, false, false,
-                false, false, false,
-                true, true, true,
-                false, false, false,
-                false, false, false]
-
-twist1: /carla/twist
-
-twist1_twist_rejection_threshold: 2.0
-
-twist1_config: [false, false, false,
                 false, false, false,
                 true, false, false,
                 false, false, true,
@@ -113,9 +114,9 @@ twist1_config: [false, false, false,
 
 ####################################################################### local path #
 
-# localpath0: test/localpath
-
 localpath0: /optimalTrajectory/localOptimalPath
+
+localpath0_port: port0
 
 ####################################################################### controller params #
 
