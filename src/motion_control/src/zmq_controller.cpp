@@ -68,8 +68,7 @@ namespace CB {
             return false;
         }
 
-        zmq_publisher_.initialize("tcp://*:5556");
-
+        
         // 定时器线程，处理传感器
         const std::chrono::duration<double> timespan{1.0 / sample_frequency_};
         timer_.start(std::chrono::duration_cast<std::chrono::nanoseconds>(timespan), std::bind(&RosController::periodicUpdate, this));
@@ -173,10 +172,30 @@ namespace CB {
 
         std::cout << "now: " << toSec(this->now()) << std::endl;
 
+        /*-------------------------------- zmq publisher-----------------------------------------*/
+
+        if(filter_config_yaml_["zmq_pub_port"]){
+            std::string port = filter_config_yaml_["zmq_pub_port"].as<std::string>();
+            zmq_publisher_.initialize(port);
+            std::cout << "controller node publisher bind to: " << port << std::endl;
+        }
+        else{
+            std::cout << "missing param 'zmq_pub_port' " << std::endl;
+            return false;
+        }
+
         /*-------------------------------- zmq subscribe-----------------------------------------*/
         std::vector<SubscriberConfig> zmq_sub_cfgs;
         SubscriberConfig sub_cfg;
-        sub_cfg.address = "tcp://localhost:5557";
+        if(filter_config_yaml_["zmq_sub_port"]){
+            std::string port = filter_config_yaml_["zmq_sub_port"].as<std::string>();
+            sub_cfg.address = port;
+            std::cout << "controller node subscriber bind to: " << port << std::endl;
+        }
+        else{
+            std::cout << "missing param 'zmq_sub_port'" << std::endl;
+            return false;
+        }
 
         // odom subscribe
         size_t topic_ind = 0;

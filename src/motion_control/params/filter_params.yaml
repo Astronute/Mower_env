@@ -24,6 +24,21 @@ sensor_dead: 5.0
 # 局部轨迹延迟
 local_path_timeout: 1.0
 
+# 控制信号发布端口
+zmq_pub_port: tcp://*:5556
+
+# 消息订阅端口
+zmq_sub_port: tcp://localhost:5556
+
+####################################################################### controller config #
+
+control_frequency: 20.0 # 优先使用controller_params.yaml中设置的频率
+
+# 前视时间
+t_delta_max: 0.3
+t_delta_min: 0.3
+
+
 ####################################################################### odom #
 
 odom0: odom
@@ -102,12 +117,7 @@ twist1_config: [false, false, false,
 
 localpath0: /optimalTrajectory/localOptimalPath
 
-# controller config
-control_frequency: 20.0 # 优先使用controller_params.yaml中设置的频率
-
-# 前视时间
-t_delta_max: 0.3
-t_delta_min: 0.3
+####################################################################### controller params #
 
 mpc0: slow_mode
 
