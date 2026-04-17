@@ -88,7 +88,7 @@ odom2_config: [true, true, false,
 
 pose0: /test/pose
 
-pose_port: port0
+pose0_port: port0
 
 pose0_rejection_threshold: 2
 
