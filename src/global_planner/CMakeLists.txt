@@ -7,6 +7,8 @@ set(PROTO_DIR ${PROJECT_SOURCE_DIR}/../msg/generated)
 
 find_package(Eigen3 REQUIRED)
 find_package(Protobuf REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(CGAL REQUIRED COMPONENTS Core)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROTO_DIR})
@@ -38,20 +40,22 @@ add_executable(global_planner
 )
 
 set_target_properties(global_planner PROPERTIES
-    BUILD_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib"
-    INSTALL_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib"
-    # 设置 RPATH 优先于 LD_LIBRARY_PATH
-    LINK_FLAGS "-Wl,--enable-new-dtags"
+    BUILD_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib;${THIRD_PARTY}/geometry_utils/build/lib"
+    INSTALL_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib;${THIRD_PARTY}/geometry_utils/build/lib"
+    # 强制使用 RPATH
+    LINK_FLAGS "-Wl,--disable-new-dtags"
 )
 
 target_link_libraries(global_planner 
   ${PROTOBUF_LIBRARIES}
+  ${OpenCV_LIBS} 
+  CGAL::CGAL 
   libzmq.so
   atomic
   libOsqpEigen.so 
   libosqp.so 
+  libgeometry_utils.so 
   libyaml-cpp.a 
-  libgeometry_utils.so
 )
 
 install(TARGETS

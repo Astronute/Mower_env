@@ -4,21 +4,28 @@
 #include <iostream>
 #include <algorithm>
 
-#include "fields_cover_planner.h"
 
 
 namespace global_planner{
 
-GlobalPlanner::GlobalPlanner(){
+GlobalPlanner::GlobalPlanner():
+    running_(true)
+{
 
 }
 
 GlobalPlanner::~GlobalPlanner(){
-    
+    running_ = false;
 }
 
 bool GlobalPlanner::initialize(){
     
+    return true;
+}
+
+void GlobalPlanner::spin(){
+    std::unique_lock<std::mutex> lock(mtx_);
+    cv_.wait(lock, [this]() { return !running_; });
 }
 
 bool GlobalPlanner::getInfoFromJSON(const std::string &file_dir){
@@ -87,19 +94,56 @@ bool GlobalPlanner::getInfoFromJSON(const std::string &file_dir){
         std::cerr << "cannot open: " << file_dir << std::endl;
         return false;
     }
-
+    mission_info.mission_dir = file_dir;
     mission_info_ = mission_info;
 
     return true;
 }
 
-void GlobalPlanner::writeWaypointToJSON(const std::string &file_dir, const std::vector<std::vector<double>> &waypoints){
+bool GlobalPlanner::writeWaypointsToJSON(const std::string &file_dir, const std::vector<std::vector<double>> &waypoints){
     std::lock_guard<std::mutex> lock(mtx_json_);
+    bool w_flag = false;
+    std::vector<std::vector<double>> writepath;
+    writepath = waypoints;
 
     std::ifstream load_file(file_dir);
     nlohmann::json json_tree;
     if(load_file.is_open()){
-        
+        try {
+            json_tree = nlohmann::json::parse(load_file);
+            load_file.close();
+            // std::string mapid = json_tree.at("features").at("mapId").get<std::string>();
+            for(auto &feature :json_tree.at("features")){
+                if (feature.contains("properties")&&feature["properties"].contains("featureType")
+                    && feature["properties"]["featureType"]=="waypoints"){
+                    feature["geometry"]["coordinates"] = writepath;
+                    w_flag = true;
+                    break;
+                }
+            }
+            if(!w_flag){
+                nlohmann::json j_properties = {
+                    {"featureType", "waypoints"},
+                    {"name", "途径点"},
+                    {"count", writepath.size()},
+                    {"remarks", "关键路径点"}
+                };
+                nlohmann::json j_geometry = {
+                    {"type", "MultiPoint"},
+                    {"coordinates", writepath}
+                };
+                nlohmann::json j_waypoints = {
+                    {"type", "Feature"},
+                    {"properties", j_properties},
+                    {"geometry", j_geometry},
+                    {"bbox", nlohmann::json::array()}
+                };
+                json_tree["features"].push_back(j_waypoints);
+                w_flag = true;
+            }
+        } catch (nlohmann::json::parse_error& e) {
+            std::cerr << "解析错误: " << e.what() << std::endl;
+        }
     }
     else {
         std::cerr << "cannot open: " << file_dir << std::endl;
@@ -110,9 +154,44 @@ void GlobalPlanner::writeWaypointToJSON(const std::string &file_dir, const std::
     std::ofstream out_file(file_dir);
     out_file << std::setw(4) << json_tree << std::endl;
     out_file.close();
+
+    return true;
 }
 
-bool GlobalPlanner::runGlobalMission(const MissionInfo &mission){
+void GlobalPlanner::writePathToJSON(const std::string &file_dir, const std::vector<std::vector<double>> &path){
+    std::lock_guard<std::mutex> lock(mtx_json_);
+
+    std::vector<std::vector<std::vector<double>>> writepath;
+    writepath.push_back(path);
+
+    std::ifstream load_file(file_dir);
+    nlohmann::json json_tree;
+    if(load_file.is_open()) {
+        try {
+            json_tree = nlohmann::json::parse(load_file);
+            load_file.close();
+            // std::string mapid = json_tree.at("features").at("mapId").get<std::string>();
+            for(auto &feature :json_tree.at("features")){
+                if (feature.contains("properties")&&feature["properties"].contains("featureType")
+                    && feature["properties"]["featureType"]=="workingPath"){
+                    feature["geometry"]["coordinates"] = writepath;
+                }
+            }
+        } catch (nlohmann::json::parse_error& e) {
+            std::cerr << "解析错误: " << e.what() << std::endl;
+        }
+    }
+    else {
+        std::cerr << "cannot open: " << file_dir << std::endl;
+    }
+    // 写回文件
+    std::ofstream out_file(file_dir);
+    out_file << std::setw(4) << json_tree << std::endl;
+    out_file.close();
+    std::cout << "path write down" << file_dir << std::endl;
+}
+
+void GlobalPlanner::runGlobalMission(const MissionInfo &mission){
 
     if(mission.task_type == 1){
         std::cout << "Create fields cover task" << std::endl;
@@ -137,7 +216,20 @@ bool GlobalPlanner::runGlobalMission(const MissionInfo &mission){
 
         std::vector<GU::Point> opt_path;
         fc_planner->planLPath(boundary, obstacles, mission.working_rotate, opt_path);
+        if(!opt_path.empty()){
+            std::vector<std::vector<double>> waypoints_w;
+            for(GU::Point p:opt_path){
+                std::vector<double> pos{p(0), p(1)};
+                waypoints_w.push_back(pos);
+            }
 
+            writeWaypointsToJSON(mission.mission_dir, waypoints_w);
+            writePathToJSON(mission.mission_dir, waypoints_w);
+            std::cout << "GONG-任务创建成功: " << waypoints_w.size() << std::endl;
+        }
+        else{
+
+        }
     }
     else if(mission.task_type == 2){
 
