@@ -1,1 +1,0 @@
-/home/yat/Mower_env/install/motion_control/motion_control
