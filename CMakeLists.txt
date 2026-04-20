@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 # 添加子目录（按顺序）
-add_subdirectory(src/motion_control ${CMAKE_BINARY_DIR}/motion_control)
+add_subdirectory(src/global_planner ${CMAKE_BINARY_DIR}/global_planner)
+
+# add_subdirectory(src/motion_control ${CMAKE_BINARY_DIR}/motion_control)
 
 message(STATUS "Project configuration complete")

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(global_planner)
 
-
+set(PROJECT_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/install)
 set(THIRD_PARTY ${PROJECT_SOURCE_DIR}/../third_party)
 set(PROTO_DIR ${PROJECT_SOURCE_DIR}/../msg/generated)
 
@@ -15,12 +15,14 @@ include_directories(${EIGEN3_INCLUDE_DIRS})
 include_directories(${THIRD_PARTY}/osqp/include)
 include_directories(${THIRD_PARTY}/osqp-eigen/include)
 include_directories(${THIRD_PARTY}/yaml-cpp-master/include)
+include_directories(${THIRD_PARTY}/geometry_utils/geometry_utils/inc)
 
 
 link_directories(${THIRD_PARTY}/libzmq-4.3.5/build/lib)
 link_directories(${THIRD_PARTY}/osqp/lib)
 link_directories(${THIRD_PARTY}/osqp-eigen/lib)
 link_directories(${THIRD_PARTY}/yaml-cpp-master/lib)
+link_directories(${THIRD_PARTY}/geometry_utils/build/lib)
 
 file(GLOB SRC_LIST_ 
   ${PROJECT_SOURCE_DIR}/src/*.cpp 
@@ -48,10 +50,11 @@ target_link_libraries(global_planner
   atomic
   libOsqpEigen.so 
   libosqp.so 
-  libyaml-cpp.a
+  libyaml-cpp.a 
+  libgeometry_utils.so
 )
 
 install(TARGETS
   global_planner
-  DESTINATION /home/yat/Mower_env/install/${PROJECT_NAME}
+  DESTINATION ${PROJECT_INSTALL_PREFIX}/../../../install/${PROJECT_NAME}
 )
