@@ -19,7 +19,7 @@ GlobalPlanner::~GlobalPlanner(){
 }
 
 bool GlobalPlanner::initialize(){
-    
+
     return true;
 }
 
@@ -48,6 +48,7 @@ bool GlobalPlanner::getInfoFromJSON(const std::string &file_dir){
                     mission_info.task_type = feature["properties"]["taskType"];
                     mission_info.working_rotate = feature["properties"]["workingRotate"];
                     mission_info.working_width = feature["properties"]["workingWidth"];
+                    std::cout << task_type_name << std::endl;
                 }
                 else if(feature.contains("properties")&&feature["properties"].contains("featureType") // 起始点
                     && feature["properties"]["featureType"]=="startPoint")

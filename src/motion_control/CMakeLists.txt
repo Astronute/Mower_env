@@ -53,5 +53,5 @@ target_link_libraries(motion_control
 
 install(TARGETS
   motion_control
-  DESTINATION /home/yat/Mower_env/install/${PROJECT_NAME}
+  DESTINATION ${PROJECT_INSTALL_PREFIX}/../../../install/${PROJECT_NAME}
 )

@@ -1,0 +1,14 @@
+
+device_tty: "/dev/ttyUSB0"
+
+# 串口发送数据的频率
+tty_frequency: 20.0
+
+# 消息订阅端口
+zmq_sub_port0: tcp://localhost:5557
+
+# 控制信号
+ztwist: /cmd_vel
+
+ztwist_sub_port: port0
+

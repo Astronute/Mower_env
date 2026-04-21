@@ -11,6 +11,8 @@ int main(){
         std::cout << "Global planner initialize fail" << std::endl;
         return 0;
     }
+    planner->getInfoFromJSON("/home/tom/Mower_env/src/global_planner/params/mission_test.json");
+
     planner->spin();
     
     return 0;

@@ -14,7 +14,8 @@
         "/usr/include/**",
         "/home/tom/Mower_env/src/msg/generated/**",
         "/home/tom/Mower_env/src/motion_control/include/**",
-        "/home/tom/Mower_env/src/global_planner/include/**"
+        "/home/tom/Mower_env/src/global_planner/include/**",
+        "/home/tom/Mower_env/src/turn_on_robot/include/**"
       ],
       "name": "ROS",
       "intelliSenseMode": "gcc-x64",
