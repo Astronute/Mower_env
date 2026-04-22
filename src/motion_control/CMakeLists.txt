@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(motion_control)
 
-
+set(PROJECT_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/install)
 set(THIRD_PARTY ${PROJECT_SOURCE_DIR}/../third_party)
 set(PROTO_DIR ${PROJECT_SOURCE_DIR}/../msg/generated)
 

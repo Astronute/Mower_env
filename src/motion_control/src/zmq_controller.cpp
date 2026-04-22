@@ -84,7 +84,7 @@ namespace CB {
     bool RosController::loadParams(){
         try{
             #ifdef USE_SIM
-            filter_config_yaml_ = YAML::LoadFile("/home/yat/Mower_env/src/motion_control/params/filter_params.yaml");
+            filter_config_yaml_ = YAML::LoadFile("/home/tom/Mower_env/src/motion_control/params/filter_params.yaml");
             #else
             filter_config_yaml_ = YAML::LoadFile("/home/kickpi/sim_ws/src/motion_control/params/filter_params.yaml");
             #endif
@@ -561,6 +561,10 @@ namespace CB {
 
             Eigen::MatrixXd covariance_rotated(TWIST_SIZE, TWIST_SIZE);
             covariance_rotated.setZero();
+            if(!msg->twist().covariance().data()){
+                std::cout << topic_name << " covariance empty" << std::endl;
+                return ;
+            }
             copyCovariance(msg->twist().covariance().data(), covariance_rotated, topic_name, update_vector, POSITION_V_OFFSET, TWIST_SIZE);
             measurement_covariance.block(POSITION_V_OFFSET, POSITION_V_OFFSET, TWIST_SIZE, TWIST_SIZE) = covariance_rotated.block(0, 0, TWIST_SIZE, TWIST_SIZE);
 
@@ -1135,6 +1139,9 @@ namespace CB {
         const std::vector<bool> & update_vector,
         const size_t offset, const size_t dimension
     ){
+        if(!covariance_in){
+            std::cout << topic_name << " covariance empty" << std::endl;
+        }
         for(size_t i=0; i<dimension; ++i){
             for(size_t j=0; j<dimension; ++j){
                 covariance_out(i, j) = covariance_in[dimension * i + j];

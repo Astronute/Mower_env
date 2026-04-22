@@ -112,6 +112,18 @@ twist0_config: [false, false, false,
                 false, false, true,
                 false, false, false]
 
+twist1: /codbot/twist
+
+twist1_port: port0
+
+twist1_twist_rejection_threshold: 2.0
+
+twist1_config: [false, false, false,
+                false, false, false,
+                true, false, false,
+                false, false, true,
+                false, false, false]
+
 ####################################################################### local path #
 
 localpath0: /optimalTrajectory/localOptimalPath

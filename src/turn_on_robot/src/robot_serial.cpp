@@ -2,14 +2,6 @@
 
 
 
-/*底盘反馈数据缓冲区*/
-carMoveInfo_t g_tCarMoveInfo;
-carMotorInfo_t g_tCarMotorInfo;
-carBatteryInfo_t g_tCarBatteryInfo;
-carImuAttitude_t g_tCarImuAttitudeInfo;
-carImuRaw_t g_tCarImuRawInfo;
-carTypeInfo_t g_tCarTypeInfo;
-
 /*根据串口对应的设备，进行修改*/
 const char default_path[] = "/dev/ttyUSB0";
 
@@ -26,117 +18,6 @@ uint8_t xor_check(uint8_t *_buf, uint8_t len)
     return xorTemp;
 }
 
-/*根据缓存的数据，分别存入各个缓冲区*/
-uint8_t carInfoParse(uint8_t *_buf, uint8_t _len)
-{
-    //根据异或校验判断数据是否存在接收错误
-    if (_buf[_len - 1] == xor_check(&_buf[2], _len - 3))
-    {
-
-        switch (_buf[2])
-        {
-        case 0x02: // 速度、转向
-
-            g_tCarMoveInfo.x_dir = _buf[3];
-            g_tCarMoveInfo.x_lineSpeed = _buf[4] << 8 | _buf[5];
-            g_tCarMoveInfo.y_dir = _buf[6];
-            g_tCarMoveInfo.y_lineSpeed = _buf[7] << 8 | _buf[8];
-            g_tCarMoveInfo.steerDir = _buf[9];
-            g_tCarMoveInfo.steerAngle = _buf[10] << 8 | _buf[11];
-
-            break;
-
-        case 0x03: //电机转速
-            g_tCarMotorInfo.motor1Speed = _buf[3] << 8 | _buf[4];
-            g_tCarMotorInfo.motor2Speed = _buf[5] << 8 | _buf[6];
-            g_tCarMotorInfo.motor3Speed = _buf[7] << 8 | _buf[8];
-            g_tCarMotorInfo.motor4Speed = _buf[9] << 8 | _buf[10];
-
-            break;
-
-        case 0x04: //电压
-            g_tCarBatteryInfo.voltage = _buf[3];
-            //printf("%x\n", g_tCarBatteryInfo.voltage );
-            break;
-
-        case 0x05: //IMU pitch roll yaw
-            g_tCarImuAttitudeInfo.pitchSymbol = _buf[3];
-            g_tCarImuAttitudeInfo.pitch = _buf[4] << 8 | _buf[5];
-            g_tCarImuAttitudeInfo.rollSymbol = _buf[6];
-            g_tCarImuAttitudeInfo.roll = _buf[7] << 8 | _buf[8];
-            g_tCarImuAttitudeInfo.yawSymbol = _buf[9];
-            g_tCarImuAttitudeInfo.yaw = _buf[10] << 8 | _buf[11];
-
-        case 0x06: //imu 原始数据
-            g_tCarImuRawInfo.gyroxSymbol = _buf[3];
-            g_tCarImuRawInfo.gyrox = _buf[4] << 8 | _buf[5];
-            g_tCarImuRawInfo.gyroySymbol = _buf[6];
-            g_tCarImuRawInfo.gyroy = _buf[7] << 8 | _buf[8];
-            g_tCarImuRawInfo.gyrozSymbol = _buf[9];
-            g_tCarImuRawInfo.gyroz = _buf[10] << 8 | _buf[11];
-            g_tCarImuRawInfo.accelxSymbol = _buf[12];
-            g_tCarImuRawInfo.accelx = _buf[13] << 8 | _buf[14];
-            g_tCarImuRawInfo.accelySymbol = _buf[15];
-            g_tCarImuRawInfo.accely = _buf[16] << 8 | _buf[17];
-            g_tCarImuRawInfo.accelzSymbol = _buf[18];
-            g_tCarImuRawInfo.accelz = _buf[19] << 8 | _buf[20];
-            g_tCarImuRawInfo.quatwSymbol = _buf[21];
-            g_tCarImuRawInfo.quatw = _buf[22] << 8 | _buf[23];
-            g_tCarImuRawInfo.quatxSymbol = _buf[24];
-            g_tCarImuRawInfo.quatx = _buf[25] << 8 | _buf[26];
-            g_tCarImuRawInfo.quatySymbol = _buf[27];
-            g_tCarImuRawInfo.quaty = _buf[28] << 8 | _buf[29];
-            g_tCarImuRawInfo.quatzSymbol = _buf[30];
-            g_tCarImuRawInfo.quatz = _buf[31] << 8 | _buf[32];
-            ;
-            break;
-
-        case 0x07: //车辆类型
-            g_tCarTypeInfo.carType = _buf[3];
-
-            break;
-
-        default:
-
-            break;
-        }
-    }
-}
-
-/*缓存每一帧数据，并缓存下来*/
-void packet_unpack(uint8_t _buf)
-{
-    static uint8_t uart_flag = 1;
-    static uint8_t s_uartBuf[100];
-    static uint8_t s_len = 0;
-    if (_buf == 0xFD)
-    {
-        s_uartBuf[0] = 0xFD;
-        uart_flag = 1;
-        s_len++;
-    }
-    else
-    {
-        if (uart_flag == 1)
-        {
-            if (s_len > s_uartBuf[1] + 1)
-            {
-                s_uartBuf[s_len] = _buf;
-                s_len++;
-
-                carInfoParse(s_uartBuf, s_len);
-                uart_flag = 0;
-                s_len = 0;
-                return;
-            }
-            else
-            {
-                s_uartBuf[s_len] = _buf;
-                s_len++;
-            }
-        }
-    }
-}
 
 /*小车控制函数， 
     fd ： 串口设备的文件描述符

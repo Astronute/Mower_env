@@ -28,6 +28,9 @@
 #define USE_SIM
 #endif
 
+using SysTimePoint = std::chrono::time_point<std::chrono::system_clock>;
+using SysTimeDuration = std::chrono::system_clock::duration;
+
 namespace turn_on_robot{
 
     struct EgoVelocityData{
@@ -57,9 +60,29 @@ namespace turn_on_robot{
 
         bool loadParams();
 
-        void TurnOnRobot::zmq_message_callback(const std::string& message, const std::string& topic);
+        std::vector<double> loadCovariance(const std::string & sensor_name);
+
+        void zmq_message_callback(const std::string& message, const std::string& topic);
+
+        void packet_unpack(uint8_t _buf);
+
+        uint8_t carInfoParse(uint8_t *_buf, uint8_t _len);
 
         void TimerCallback();
+
+		auto now() const {
+			return std::chrono::system_clock::now();
+		}
+
+		google::protobuf::Timestamp systimeToProto(const SysTimePoint & time){
+			google::protobuf::Timestamp stamp;
+			
+			auto duration = time.time_since_epoch();
+			stamp.set_seconds(std::chrono::duration_cast<std::chrono::seconds>(duration).count());
+			stamp.set_nanos(std::chrono::duration_cast<std::chrono::nanoseconds>(duration % std::chrono::seconds(1)).count());
+
+			return stamp;
+		}
 
     private:
 		std::atomic<bool> running_;
@@ -80,7 +103,28 @@ namespace turn_on_robot{
 
         ZmqSubscriber zmq_subscriber_;
 
+        ZmqPublisher zmq_publisher_;
+
+        std::string base_link_frame_id_;
+
+        std::string world_frame_id_;
+
         int* serial_fd_;
+
+        std::unordered_map<std::string, std::vector<double>> sensor_covariance_map_; 
+
+        /*底盘反馈数据缓冲区*/
+        carMoveInfo_t g_tCarMoveInfo;
+
+        carMotorInfo_t g_tCarMotorInfo;
+
+        carBatteryInfo_t g_tCarBatteryInfo;
+
+        carImuAttitude_t g_tCarImuAttitudeInfo;
+
+        carImuRaw_t g_tCarImuRawInfo;
+
+        carTypeInfo_t g_tCarTypeInfo;
 
     };
 

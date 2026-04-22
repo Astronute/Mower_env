@@ -105,14 +105,8 @@ typedef struct
 
 void sendCarControlCmd(int *fd, int16_t _xLineSpeed, int16_t _yLineSpeed, int16_t _steerAngle);
 
-/*串口解析*/
-void packet_unpack(uint8_t buf);
-
 //异或校验
 uint8_t xor_check(uint8_t *_buf, uint8_t len);
-
-/*根据缓存的数据，分别存入各个缓冲区*/
-uint8_t carInfoParse(uint8_t *_buf, uint8_t _len);
 
 void sendCarControlCmd(int *fd, int16_t _xLineSpeed, int16_t _yLineSpeed, int16_t _steerAngle);
 
