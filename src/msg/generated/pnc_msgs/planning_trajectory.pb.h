@@ -33,7 +33,7 @@
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/unknown_field_set.h>
 #include "pnc_msgs/point_vec.pb.h"
-#include <google/protobuf/timestamp.pb.h>
+#include "std_msgs/header.pb.h"
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
 #define PROTOBUF_INTERNAL_EXPORT_pnc_5fmsgs_2fplanning_5ftrajectory_2eproto
@@ -49,7 +49,7 @@ struct TableStruct_pnc_5fmsgs_2fplanning_5ftrajectory_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[2]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[1]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -57,204 +57,16 @@ struct TableStruct_pnc_5fmsgs_2fplanning_5ftrajectory_2eproto {
 };
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_pnc_5fmsgs_2fplanning_5ftrajectory_2eproto;
 namespace pnc_msgs {
-class Header;
-class HeaderDefaultTypeInternal;
-extern HeaderDefaultTypeInternal _Header_default_instance_;
 class PlanningTrajectory;
 class PlanningTrajectoryDefaultTypeInternal;
 extern PlanningTrajectoryDefaultTypeInternal _PlanningTrajectory_default_instance_;
 }  // namespace pnc_msgs
 PROTOBUF_NAMESPACE_OPEN
-template<> ::pnc_msgs::Header* Arena::CreateMaybeMessage<::pnc_msgs::Header>(Arena*);
 template<> ::pnc_msgs::PlanningTrajectory* Arena::CreateMaybeMessage<::pnc_msgs::PlanningTrajectory>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace pnc_msgs {
 
 // ===================================================================
-
-class Header PROTOBUF_FINAL :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:pnc_msgs.Header) */ {
- public:
-  inline Header() : Header(nullptr) {};
-  virtual ~Header();
-
-  Header(const Header& from);
-  Header(Header&& from) noexcept
-    : Header() {
-    *this = ::std::move(from);
-  }
-
-  inline Header& operator=(const Header& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline Header& operator=(Header&& from) noexcept {
-    if (GetArena() == from.GetArena()) {
-      if (this != &from) InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return GetMetadataStatic().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return GetMetadataStatic().reflection;
-  }
-  static const Header& default_instance();
-
-  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const Header* internal_default_instance() {
-    return reinterpret_cast<const Header*>(
-               &_Header_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    0;
-
-  friend void swap(Header& a, Header& b) {
-    a.Swap(&b);
-  }
-  inline void Swap(Header* other) {
-    if (other == this) return;
-    if (GetArena() == other->GetArena()) {
-      InternalSwap(other);
-    } else {
-      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(Header* other) {
-    if (other == this) return;
-    GOOGLE_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  inline Header* New() const final {
-    return CreateMaybeMessage<Header>(nullptr);
-  }
-
-  Header* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
-    return CreateMaybeMessage<Header>(arena);
-  }
-  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
-  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
-  void CopyFrom(const Header& from);
-  void MergeFrom(const Header& from);
-  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
-  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
-      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  inline void SharedCtor();
-  inline void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(Header* other);
-  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
-  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "pnc_msgs.Header";
-  }
-  protected:
-  explicit Header(::PROTOBUF_NAMESPACE_ID::Arena* arena);
-  private:
-  static void ArenaDtor(void* object);
-  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
-  public:
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
-  private:
-  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
-    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_pnc_5fmsgs_2fplanning_5ftrajectory_2eproto);
-    return ::descriptor_table_pnc_5fmsgs_2fplanning_5ftrajectory_2eproto.file_level_metadata[kIndexInFileMessages];
-  }
-
-  public:
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  enum : int {
-    kFrameIdFieldNumber = 3,
-    kStampFieldNumber = 2,
-    kSeqFieldNumber = 1,
-  };
-  // string frame_id = 3;
-  void clear_frame_id();
-  const std::string& frame_id() const;
-  void set_frame_id(const std::string& value);
-  void set_frame_id(std::string&& value);
-  void set_frame_id(const char* value);
-  void set_frame_id(const char* value, size_t size);
-  std::string* mutable_frame_id();
-  std::string* release_frame_id();
-  void set_allocated_frame_id(std::string* frame_id);
-  GOOGLE_PROTOBUF_RUNTIME_DEPRECATED("The unsafe_arena_ accessors for"
-  "    string fields are deprecated and will be removed in a"
-  "    future release.")
-  std::string* unsafe_arena_release_frame_id();
-  GOOGLE_PROTOBUF_RUNTIME_DEPRECATED("The unsafe_arena_ accessors for"
-  "    string fields are deprecated and will be removed in a"
-  "    future release.")
-  void unsafe_arena_set_allocated_frame_id(
-      std::string* frame_id);
-  private:
-  const std::string& _internal_frame_id() const;
-  void _internal_set_frame_id(const std::string& value);
-  std::string* _internal_mutable_frame_id();
-  public:
-
-  // .google.protobuf.Timestamp stamp = 2;
-  bool has_stamp() const;
-  private:
-  bool _internal_has_stamp() const;
-  public:
-  void clear_stamp();
-  const PROTOBUF_NAMESPACE_ID::Timestamp& stamp() const;
-  PROTOBUF_NAMESPACE_ID::Timestamp* release_stamp();
-  PROTOBUF_NAMESPACE_ID::Timestamp* mutable_stamp();
-  void set_allocated_stamp(PROTOBUF_NAMESPACE_ID::Timestamp* stamp);
-  private:
-  const PROTOBUF_NAMESPACE_ID::Timestamp& _internal_stamp() const;
-  PROTOBUF_NAMESPACE_ID::Timestamp* _internal_mutable_stamp();
-  public:
-  void unsafe_arena_set_allocated_stamp(
-      PROTOBUF_NAMESPACE_ID::Timestamp* stamp);
-  PROTOBUF_NAMESPACE_ID::Timestamp* unsafe_arena_release_stamp();
-
-  // uint32 seq = 1;
-  void clear_seq();
-  ::PROTOBUF_NAMESPACE_ID::uint32 seq() const;
-  void set_seq(::PROTOBUF_NAMESPACE_ID::uint32 value);
-  private:
-  ::PROTOBUF_NAMESPACE_ID::uint32 _internal_seq() const;
-  void _internal_set_seq(::PROTOBUF_NAMESPACE_ID::uint32 value);
-  public:
-
-  // @@protoc_insertion_point(class_scope:pnc_msgs.Header)
- private:
-  class _Internal;
-
-  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
-  typedef void InternalArenaConstructable_;
-  typedef void DestructorSkippable_;
-  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr frame_id_;
-  PROTOBUF_NAMESPACE_ID::Timestamp* stamp_;
-  ::PROTOBUF_NAMESPACE_ID::uint32 seq_;
-  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
-  friend struct ::TableStruct_pnc_5fmsgs_2fplanning_5ftrajectory_2eproto;
-};
-// -------------------------------------------------------------------
 
 class PlanningTrajectory PROTOBUF_FINAL :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:pnc_msgs.PlanningTrajectory) */ {
@@ -298,7 +110,7 @@ class PlanningTrajectory PROTOBUF_FINAL :
                &_PlanningTrajectory_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    1;
+    0;
 
   friend void swap(PlanningTrajectory& a, PlanningTrajectory& b) {
     a.Swap(&b);
@@ -392,23 +204,23 @@ class PlanningTrajectory PROTOBUF_FINAL :
   const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::pnc_msgs::PointVec8f >&
       trajectory() const;
 
-  // .pnc_msgs.Header header = 1;
+  // .std_msgs.Header header = 1;
   bool has_header() const;
   private:
   bool _internal_has_header() const;
   public:
   void clear_header();
-  const ::pnc_msgs::Header& header() const;
-  ::pnc_msgs::Header* release_header();
-  ::pnc_msgs::Header* mutable_header();
-  void set_allocated_header(::pnc_msgs::Header* header);
+  const ::std_msgs::Header& header() const;
+  ::std_msgs::Header* release_header();
+  ::std_msgs::Header* mutable_header();
+  void set_allocated_header(::std_msgs::Header* header);
   private:
-  const ::pnc_msgs::Header& _internal_header() const;
-  ::pnc_msgs::Header* _internal_mutable_header();
+  const ::std_msgs::Header& _internal_header() const;
+  ::std_msgs::Header* _internal_mutable_header();
   public:
   void unsafe_arena_set_allocated_header(
-      ::pnc_msgs::Header* header);
-  ::pnc_msgs::Header* unsafe_arena_release_header();
+      ::std_msgs::Header* header);
+  ::std_msgs::Header* unsafe_arena_release_header();
 
   // double length = 4;
   void clear_length();
@@ -436,7 +248,7 @@ class PlanningTrajectory PROTOBUF_FINAL :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::pnc_msgs::PointVec8f > trajectory_;
-  ::pnc_msgs::Header* header_;
+  ::std_msgs::Header* header_;
   double length_;
   ::PROTOBUF_NAMESPACE_ID::int32 id_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -451,212 +263,26 @@ class PlanningTrajectory PROTOBUF_FINAL :
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
-// Header
-
-// uint32 seq = 1;
-inline void Header::clear_seq() {
-  seq_ = 0u;
-}
-inline ::PROTOBUF_NAMESPACE_ID::uint32 Header::_internal_seq() const {
-  return seq_;
-}
-inline ::PROTOBUF_NAMESPACE_ID::uint32 Header::seq() const {
-  // @@protoc_insertion_point(field_get:pnc_msgs.Header.seq)
-  return _internal_seq();
-}
-inline void Header::_internal_set_seq(::PROTOBUF_NAMESPACE_ID::uint32 value) {
-  
-  seq_ = value;
-}
-inline void Header::set_seq(::PROTOBUF_NAMESPACE_ID::uint32 value) {
-  _internal_set_seq(value);
-  // @@protoc_insertion_point(field_set:pnc_msgs.Header.seq)
-}
-
-// .google.protobuf.Timestamp stamp = 2;
-inline bool Header::_internal_has_stamp() const {
-  return this != internal_default_instance() && stamp_ != nullptr;
-}
-inline bool Header::has_stamp() const {
-  return _internal_has_stamp();
-}
-inline const PROTOBUF_NAMESPACE_ID::Timestamp& Header::_internal_stamp() const {
-  const PROTOBUF_NAMESPACE_ID::Timestamp* p = stamp_;
-  return p != nullptr ? *p : *reinterpret_cast<const PROTOBUF_NAMESPACE_ID::Timestamp*>(
-      &PROTOBUF_NAMESPACE_ID::_Timestamp_default_instance_);
-}
-inline const PROTOBUF_NAMESPACE_ID::Timestamp& Header::stamp() const {
-  // @@protoc_insertion_point(field_get:pnc_msgs.Header.stamp)
-  return _internal_stamp();
-}
-inline void Header::unsafe_arena_set_allocated_stamp(
-    PROTOBUF_NAMESPACE_ID::Timestamp* stamp) {
-  if (GetArena() == nullptr) {
-    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(stamp_);
-  }
-  stamp_ = stamp;
-  if (stamp) {
-    
-  } else {
-    
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:pnc_msgs.Header.stamp)
-}
-inline PROTOBUF_NAMESPACE_ID::Timestamp* Header::release_stamp() {
-  auto temp = unsafe_arena_release_stamp();
-  if (GetArena() != nullptr) {
-    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
-  }
-  return temp;
-}
-inline PROTOBUF_NAMESPACE_ID::Timestamp* Header::unsafe_arena_release_stamp() {
-  // @@protoc_insertion_point(field_release:pnc_msgs.Header.stamp)
-  
-  PROTOBUF_NAMESPACE_ID::Timestamp* temp = stamp_;
-  stamp_ = nullptr;
-  return temp;
-}
-inline PROTOBUF_NAMESPACE_ID::Timestamp* Header::_internal_mutable_stamp() {
-  
-  if (stamp_ == nullptr) {
-    auto* p = CreateMaybeMessage<PROTOBUF_NAMESPACE_ID::Timestamp>(GetArena());
-    stamp_ = p;
-  }
-  return stamp_;
-}
-inline PROTOBUF_NAMESPACE_ID::Timestamp* Header::mutable_stamp() {
-  // @@protoc_insertion_point(field_mutable:pnc_msgs.Header.stamp)
-  return _internal_mutable_stamp();
-}
-inline void Header::set_allocated_stamp(PROTOBUF_NAMESPACE_ID::Timestamp* stamp) {
-  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
-  if (message_arena == nullptr) {
-    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(stamp_);
-  }
-  if (stamp) {
-    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
-      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(stamp)->GetArena();
-    if (message_arena != submessage_arena) {
-      stamp = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
-          message_arena, stamp, submessage_arena);
-    }
-    
-  } else {
-    
-  }
-  stamp_ = stamp;
-  // @@protoc_insertion_point(field_set_allocated:pnc_msgs.Header.stamp)
-}
-
-// string frame_id = 3;
-inline void Header::clear_frame_id() {
-  frame_id_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-}
-inline const std::string& Header::frame_id() const {
-  // @@protoc_insertion_point(field_get:pnc_msgs.Header.frame_id)
-  return _internal_frame_id();
-}
-inline void Header::set_frame_id(const std::string& value) {
-  _internal_set_frame_id(value);
-  // @@protoc_insertion_point(field_set:pnc_msgs.Header.frame_id)
-}
-inline std::string* Header::mutable_frame_id() {
-  // @@protoc_insertion_point(field_mutable:pnc_msgs.Header.frame_id)
-  return _internal_mutable_frame_id();
-}
-inline const std::string& Header::_internal_frame_id() const {
-  return frame_id_.Get();
-}
-inline void Header::_internal_set_frame_id(const std::string& value) {
-  
-  frame_id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
-}
-inline void Header::set_frame_id(std::string&& value) {
-  
-  frame_id_.Set(
-    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
-  // @@protoc_insertion_point(field_set_rvalue:pnc_msgs.Header.frame_id)
-}
-inline void Header::set_frame_id(const char* value) {
-  GOOGLE_DCHECK(value != nullptr);
-  
-  frame_id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
-              GetArena());
-  // @@protoc_insertion_point(field_set_char:pnc_msgs.Header.frame_id)
-}
-inline void Header::set_frame_id(const char* value,
-    size_t size) {
-  
-  frame_id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
-      reinterpret_cast<const char*>(value), size), GetArena());
-  // @@protoc_insertion_point(field_set_pointer:pnc_msgs.Header.frame_id)
-}
-inline std::string* Header::_internal_mutable_frame_id() {
-  
-  return frame_id_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-}
-inline std::string* Header::release_frame_id() {
-  // @@protoc_insertion_point(field_release:pnc_msgs.Header.frame_id)
-  return frame_id_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-}
-inline void Header::set_allocated_frame_id(std::string* frame_id) {
-  if (frame_id != nullptr) {
-    
-  } else {
-    
-  }
-  frame_id_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), frame_id,
-      GetArena());
-  // @@protoc_insertion_point(field_set_allocated:pnc_msgs.Header.frame_id)
-}
-inline std::string* Header::unsafe_arena_release_frame_id() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:pnc_msgs.Header.frame_id)
-  GOOGLE_DCHECK(GetArena() != nullptr);
-  
-  return frame_id_.UnsafeArenaRelease(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-      GetArena());
-}
-inline void Header::unsafe_arena_set_allocated_frame_id(
-    std::string* frame_id) {
-  GOOGLE_DCHECK(GetArena() != nullptr);
-  if (frame_id != nullptr) {
-    
-  } else {
-    
-  }
-  frame_id_.UnsafeArenaSetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-      frame_id, GetArena());
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:pnc_msgs.Header.frame_id)
-}
-
-// -------------------------------------------------------------------
-
 // PlanningTrajectory
 
-// .pnc_msgs.Header header = 1;
+// .std_msgs.Header header = 1;
 inline bool PlanningTrajectory::_internal_has_header() const {
   return this != internal_default_instance() && header_ != nullptr;
 }
 inline bool PlanningTrajectory::has_header() const {
   return _internal_has_header();
 }
-inline void PlanningTrajectory::clear_header() {
-  if (GetArena() == nullptr && header_ != nullptr) {
-    delete header_;
-  }
-  header_ = nullptr;
+inline const ::std_msgs::Header& PlanningTrajectory::_internal_header() const {
+  const ::std_msgs::Header* p = header_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::std_msgs::Header*>(
+      &::std_msgs::_Header_default_instance_);
 }
-inline const ::pnc_msgs::Header& PlanningTrajectory::_internal_header() const {
-  const ::pnc_msgs::Header* p = header_;
-  return p != nullptr ? *p : *reinterpret_cast<const ::pnc_msgs::Header*>(
-      &::pnc_msgs::_Header_default_instance_);
-}
-inline const ::pnc_msgs::Header& PlanningTrajectory::header() const {
+inline const ::std_msgs::Header& PlanningTrajectory::header() const {
   // @@protoc_insertion_point(field_get:pnc_msgs.PlanningTrajectory.header)
   return _internal_header();
 }
 inline void PlanningTrajectory::unsafe_arena_set_allocated_header(
-    ::pnc_msgs::Header* header) {
+    ::std_msgs::Header* header) {
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(header_);
   }
@@ -668,40 +294,40 @@ inline void PlanningTrajectory::unsafe_arena_set_allocated_header(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:pnc_msgs.PlanningTrajectory.header)
 }
-inline ::pnc_msgs::Header* PlanningTrajectory::release_header() {
+inline ::std_msgs::Header* PlanningTrajectory::release_header() {
   auto temp = unsafe_arena_release_header();
   if (GetArena() != nullptr) {
     temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
   }
   return temp;
 }
-inline ::pnc_msgs::Header* PlanningTrajectory::unsafe_arena_release_header() {
+inline ::std_msgs::Header* PlanningTrajectory::unsafe_arena_release_header() {
   // @@protoc_insertion_point(field_release:pnc_msgs.PlanningTrajectory.header)
   
-  ::pnc_msgs::Header* temp = header_;
+  ::std_msgs::Header* temp = header_;
   header_ = nullptr;
   return temp;
 }
-inline ::pnc_msgs::Header* PlanningTrajectory::_internal_mutable_header() {
+inline ::std_msgs::Header* PlanningTrajectory::_internal_mutable_header() {
   
   if (header_ == nullptr) {
-    auto* p = CreateMaybeMessage<::pnc_msgs::Header>(GetArena());
+    auto* p = CreateMaybeMessage<::std_msgs::Header>(GetArena());
     header_ = p;
   }
   return header_;
 }
-inline ::pnc_msgs::Header* PlanningTrajectory::mutable_header() {
+inline ::std_msgs::Header* PlanningTrajectory::mutable_header() {
   // @@protoc_insertion_point(field_mutable:pnc_msgs.PlanningTrajectory.header)
   return _internal_mutable_header();
 }
-inline void PlanningTrajectory::set_allocated_header(::pnc_msgs::Header* header) {
+inline void PlanningTrajectory::set_allocated_header(::std_msgs::Header* header) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
   if (message_arena == nullptr) {
-    delete header_;
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(header_);
   }
   if (header) {
     ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
-      ::PROTOBUF_NAMESPACE_ID::Arena::GetArena(header);
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(header)->GetArena();
     if (message_arena != submessage_arena) {
       header = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
           message_arena, header, submessage_arena);
@@ -793,8 +419,6 @@ inline void PlanningTrajectory::set_length(double value) {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
-// -------------------------------------------------------------------
-
 
 // @@protoc_insertion_point(namespace_scope)
 

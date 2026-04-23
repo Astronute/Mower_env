@@ -5,13 +5,13 @@ base_link_frame_id: base_footprint
 # 世界坐标系
 world_frame_id: odom
 
-device_tty: "/dev/ttyUSB0"
+device_tty: "/dev/ttyUSB3"
 
 # 串口发送数据的频率
 tty_frequency: 20.0
 
 # 消息订阅端口
-zmq_sub_port0: tcp://localhost:5557
+zmq_sub_port0: tcp://127.0.0.1:5557
 
 # 消息发布端口
 zmq_pub_port: tcp://*:5556

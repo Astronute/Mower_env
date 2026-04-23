@@ -22,8 +22,8 @@ namespace CB{
     bool ControllerBase::loadParams(){
 
         try{
-            controller_config_yaml_ = YAML::LoadFile("/home/tom/Mower_env/src/motion_control/params/controller_params.yaml");
-            // controller_config_yaml_ = YAML::LoadFile("/home/kickpi/sim_ws/src/motion_control/params/controller_params.yaml");
+            // controller_config_yaml_ = YAML::LoadFile("/home/tom/Mower_env/src/motion_control/params/controller_params.yaml");
+            controller_config_yaml_ = YAML::LoadFile("/home/rpdzkj/Mower_env/src/motion_control/params/controller_params.yaml");
         } catch(const YAML::Exception& e){
             std::cout << "yaml parsing error: " << e.what() << std::endl;
             return false;

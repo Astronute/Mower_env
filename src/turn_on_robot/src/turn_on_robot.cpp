@@ -80,7 +80,7 @@ namespace turn_on_robot{
             #ifdef USE_SIM
             robot_config_yaml_ = YAML::LoadFile("/home/tom/Mower_env/src/turn_on_robot/params/robot_params.yaml");
             #else
-            robot_config_yaml_ = YAML::LoadFile("/home/kickpi/sim_ws/src/motion_control/params/filter_params.yaml");
+            robot_config_yaml_ = YAML::LoadFile("/home/rpdzkj/Mower_env/src/turn_on_robot/params/robot_params.yaml");
             #endif
         } catch(const YAML::Exception& e){
             std::cout << "yaml parsing error: " << e.what() << std::endl;
@@ -261,7 +261,7 @@ namespace turn_on_robot{
     }
 
     /*根据缓存的数据，分别存入各个缓冲区*/
-    uint8_t TurnOnRobot::carInfoParse(uint8_t *_buf, uint8_t _len)
+    void TurnOnRobot::carInfoParse(uint8_t *_buf, uint8_t _len)
     {
         //根据异或校验判断数据是否存在接收错误
         if (_buf[_len - 1] == xor_check(&_buf[2], _len - 3))
@@ -305,12 +305,13 @@ namespace turn_on_robot{
                         std::string serialized_data;
                         twist.SerializeToString(&serialized_data);
                         zmq_publisher_.publishMessage("/codbot/twist", serialized_data);
+                        // std::cout << "vel_x: " << vel_x << " gyro_z: " << gyro_z << std::endl;
                     }
                     else{
                         std::cout << "odom_twist covariance empty message not published" << std::endl;
                     }
 
-                    // std::cout << "vel_x: " << vel_x << " gyro_z: " << gyro_z << std::endl;
+                    
                     break;
                 }
                 case 0x03:{ //电机转速
@@ -355,7 +356,6 @@ namespace turn_on_robot{
                     g_tCarImuRawInfo.quaty = _buf[28] << 8 | _buf[29];
                     g_tCarImuRawInfo.quatzSymbol = _buf[30];
                     g_tCarImuRawInfo.quatz = _buf[31] << 8 | _buf[32];
-                    ;
                     break;
                 }
                 case 0x07:{ //车辆类型
@@ -367,6 +367,7 @@ namespace turn_on_robot{
                 }
             }
         }
+
     }
 
     void TurnOnRobot::TimerCallback(){

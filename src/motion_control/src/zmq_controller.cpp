@@ -86,7 +86,7 @@ namespace CB {
             #ifdef USE_SIM
             filter_config_yaml_ = YAML::LoadFile("/home/tom/Mower_env/src/motion_control/params/filter_params.yaml");
             #else
-            filter_config_yaml_ = YAML::LoadFile("/home/kickpi/sim_ws/src/motion_control/params/filter_params.yaml");
+            filter_config_yaml_ = YAML::LoadFile("/home/rpdzkj/Mower_env/src/motion_control/params/filter_params.yaml");
             #endif
         } catch(const YAML::Exception& e){
             std::cout << "yaml parsing error: " << e.what() << std::endl;

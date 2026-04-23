@@ -125,10 +125,11 @@ void ZmqSubscriber::subscriberWorker() {
     while (running_) {
         // 轮询所有订阅socket，等待100ms - 使用新的API
         zmq::poll(poll_items, std::chrono::milliseconds(100));
-        
+
         // 检查每个socket是否有消息
         for (size_t i = 0; i < sub_sockets_.size(); ++i) {
             if (poll_items[i].revents & ZMQ_POLLIN) {
+                // std::cout << "got it" << std::endl;
                 processMessage(sub_sockets_[i], i + 1);
             }
         }

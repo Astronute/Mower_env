@@ -28,9 +28,9 @@ local_path_timeout: 1.0
 zmq_pub_port: tcp://*:5557
 
 # 消息订阅端口
-zmq_sub_port0: tcp://localhost:5556
+zmq_sub_port0: tcp://127.0.0.1:5556
 
-zmq_sub_port1: tcp://localhost:5555
+zmq_sub_port1: tcp://127.0.0.1:5555
 
 ####################################################################### controller config #
 

@@ -24,7 +24,7 @@
 #include <atomic>
 #include <condition_variable>
 
-#if(1)
+#if(0)
 #define USE_SIM
 #endif
 
@@ -66,7 +66,7 @@ namespace turn_on_robot{
 
         void packet_unpack(uint8_t _buf);
 
-        uint8_t carInfoParse(uint8_t *_buf, uint8_t _len);
+        void carInfoParse(uint8_t *_buf, uint8_t _len);
 
         void TimerCallback();
 
