@@ -5,7 +5,7 @@ base_link_frame_id: base_footprint
 # 世界坐标系
 world_frame_id: odom
 
-device_tty: "/dev/ttyUSB3"
+device_tty: "/dev/ttyUSB4"
 
 # 串口发送数据的频率
 tty_frequency: 20.0

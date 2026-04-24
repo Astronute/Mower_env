@@ -56,9 +56,9 @@ odom0_config: [false, false, false,
               false, false, true,
               false, false, false]
 
-odom1: /localization/kinematic_state
+odom1: /nav_sat_fix
 
-odom1_port: port0
+odom1_port: port1
 
 odom1_pose_rejection_threshold: 5.0
 
