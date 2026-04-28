@@ -334,6 +334,8 @@ namespace turn_on_robot{
                     g_tCarImuAttitudeInfo.roll = _buf[7] << 8 | _buf[8];
                     g_tCarImuAttitudeInfo.yawSymbol = _buf[9];
                     g_tCarImuAttitudeInfo.yaw = _buf[10] << 8 | _buf[11];
+
+                    std::cout << "yaw: " << g_tCarImuAttitudeInfo.yaw << std::endl;
                 }
                 case 0x06:{ //imu 原始数据
                     g_tCarImuRawInfo.gyroxSymbol = _buf[3];
