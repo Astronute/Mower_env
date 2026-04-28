@@ -5,6 +5,7 @@
 #include "nav_msgs/odometry.pb.h"
 #include "geometry_msgs/pose.pb.h"
 #include "geometry_msgs/twist.pb.h"
+#include "geometry_msgs/quaternion.pb.h"
 #include "pnc_msgs/point_vec.pb.h"
 #include "pnc_msgs/planning_trajectory.pb.h"
 #include "zmq_subscriber.h"
@@ -82,6 +83,39 @@ namespace turn_on_robot{
 			stamp.set_nanos(std::chrono::duration_cast<std::chrono::nanoseconds>(duration % std::chrono::seconds(1)).count());
 
 			return stamp;
+		}
+
+		void quatToRPY(const geometry_msgs::Quaternion & quat, double & roll, double & pitch, double & yaw){
+			// roll (x-axis rotation)
+			double sinr_cosp = 2 * (quat.w() * quat.x() + quat.y() * quat.z());
+			double cosr_cosp = 1 - 2 * (quat.x() * quat.x() + quat.y() * quat.y());
+			roll = std::atan2(sinr_cosp, cosr_cosp);
+		
+			// pitch (y-axis rotation)
+			double sinp = 2 * (quat.w() * quat.y() - quat.z() * quat.x());
+			if (std::abs(sinp) >= 1)
+				pitch = std::copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+			else
+				pitch = std::asin(sinp);
+		
+			// yaw (z-axis rotation)
+			double siny_cosp = 2 * (quat.w() * quat.z() + quat.x() * quat.y());
+			double cosy_cosp = 1 - 2 * (quat.y() * quat.y() + quat.z() * quat.z());
+			yaw = std::atan2(siny_cosp, cosy_cosp);
+		}
+
+		void RPYToQuat(const double & roll, const double & pitch, const double & yaw, geometry_msgs::Quaternion & quat){
+			double cy = cos(yaw * 0.5);
+			double sy = sin(yaw * 0.5);
+			double cp = cos(pitch * 0.5);
+			double sp = sin(pitch * 0.5);
+			double cr = cos(roll * 0.5);
+			double sr = sin(roll * 0.5);
+		
+			quat.set_w(cy * cp * cr + sy * sp * sr);
+			quat.set_x(cy * cp * sr - sy * sp * cr);
+			quat.set_y(sy * cp * sr + cy * sp * cr);
+			quat.set_z(sy * cp * cr - cy * sp * sr);
 		}
 
     private:

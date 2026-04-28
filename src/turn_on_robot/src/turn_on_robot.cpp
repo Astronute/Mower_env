@@ -335,7 +335,38 @@ namespace turn_on_robot{
                     g_tCarImuAttitudeInfo.yawSymbol = _buf[9];
                     g_tCarImuAttitudeInfo.yaw = _buf[10] << 8 | _buf[11];
 
-                    std::cout << "yaw: " << g_tCarImuAttitudeInfo.yaw << std::endl;
+                    geometry_msgs::PoseWithCovarianceStamped pose_msg;
+                    pose_msg.mutable_header()->set_frame_id(base_link_frame_id_);
+                    SysTimePoint sys_now = this->now();
+                    pose_msg.mutable_header()->mutable_stamp()->CopyFrom(systimeToProto(sys_now));
+                    double pitch = g_tCarImuAttitudeInfo.pitch * 0.01 * M_PI / 180.0;
+                    double roll = g_tCarImuAttitudeInfo.roll * 0.01 * M_PI / 180.0;
+                    double yaw = g_tCarImuAttitudeInfo.yaw * 0.01 * M_PI / 180.0;
+                    if(g_tCarImuAttitudeInfo.pitchSymbol == 0x01){
+                        pitch = -1.0 * pitch;
+                    }
+                    if(g_tCarImuAttitudeInfo.rollSymbol == 0x01){
+                        roll = -1.0 * roll;
+                    }
+                    if(g_tCarImuAttitudeInfo.yawSymbol == 0x01){
+                        yaw = -1.0 * yaw;
+                    }
+
+                    geometry_msgs::Quaternion quat;
+                    RPYToQuat(roll, pitch, yaw, quat);
+                    pose_msg.mutable_pose()->mutable_pose()->mutable_orientation()->CopyFrom(quat);
+                    if(!sensor_covariance_map_["imu_odom"].empty()){
+                        for(double val: sensor_covariance_map_["imu_odom"]){
+                            pose_msg.mutable_pose()->mutable_covariance()->Add(val);
+                        }
+                        std::string serialized_data;
+                        pose_msg.SerializeToString(&serialized_data);
+                        zmq_publisher_.publishMessage("/codbot/pose", serialized_data);
+                        std::cout << "yaw: " << yaw << std::endl;
+                    }
+                    else{
+                        std::cout << "imu_odom covariance empty message not published" << std::endl;
+                    }
                 }
                 case 0x06:{ //imu 原始数据
                     g_tCarImuRawInfo.gyroxSymbol = _buf[3];
@@ -375,7 +406,7 @@ namespace turn_on_robot{
     void TurnOnRobot::TimerCallback(){
         {
             std::lock_guard<std::mutex> lock(ctrl_mtx_);
-            sendCarControlCmd(serial_fd_, cmd_vel_x_, cmd_vel_y_, cmd_vel_w_);
+            // sendCarControlCmd(serial_fd_, cmd_vel_x_, cmd_vel_y_, cmd_vel_w_);
         }
     }
 
