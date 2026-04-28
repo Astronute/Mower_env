@@ -362,7 +362,7 @@ namespace turn_on_robot{
                         std::string serialized_data;
                         pose_msg.SerializeToString(&serialized_data);
                         zmq_publisher_.publishMessage("/codbot/pose", serialized_data);
-                        std::cout << "yaw: " << yaw << std::endl;
+                        // std::cout << "yaw: " << yaw << std::endl;
                     }
                     else{
                         std::cout << "imu_odom covariance empty message not published" << std::endl;

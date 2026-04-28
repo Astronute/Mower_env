@@ -13,6 +13,8 @@ add_subdirectory(src/turn_on_robot ${CMAKE_BINARY_DIR}/turn_on_robot)
 
 # add_subdirectory(src/global_planner ${CMAKE_BINARY_DIR}/global_planner)
 
+add_subdirectory(src/local_planner ${CMAKE_BINARY_DIR}/local_planner)
+
 add_subdirectory(src/motion_control ${CMAKE_BINARY_DIR}/motion_control)
 
 message(STATUS "Project configuration complete")

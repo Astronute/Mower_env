@@ -1,0 +1,118 @@
+# subscribe config
+
+debug: false
+
+map_frame_id: map
+
+odom_frame_id: odom
+
+# 体坐标系
+base_link_frame_id: base_footprint
+
+# 世界坐标系
+world_frame_id: odom
+
+sample_frequency: 40.0
+
+# 传感器延迟
+sensor_timeout: 0.3
+
+sensor_dead: 5.0
+
+# 控制信号发布端口
+zmq_pub_port: tcp://*:5557
+
+# 消息订阅端口
+zmq_sub_port0: tcp://127.0.0.1:5556
+
+zmq_sub_port1: tcp://127.0.0.1:5558
+
+####################################################################### odom #
+
+odom0: /odom
+
+odom0_port: port0
+
+odom0_pose_rejection_threshold: 5.0
+
+odom0_twist_rejection_threshold: 1.0
+
+odom0_config: [false, false, false,
+              false, false, false,
+              true, false, false,
+              false, false, true,
+              false, false, false]
+
+odom1: /nav_sat_fix
+
+odom1_port: port1
+
+odom1_pose_rejection_threshold: 5.0
+
+odom1_twist_rejection_threshold: 1.0
+
+odom1_config: [true, true, false,
+              false, false, false,
+              false, false, false,
+              false, false, false,
+              false, false, false]
+
+odom2: /carla/odom
+
+odom2_port: port1
+
+odom2_pose_rejection_threshold: 5.0
+
+odom2_twist_rejection_threshold: 1.0
+
+odom2_config: [true, true, false,
+              false, false, true,
+              false, false, false,
+              false, false, false,
+              false, false, false]
+
+####################################################################### pose #
+
+pose0: /codbot/pose
+
+pose0_port: port0
+
+pose0_rejection_threshold: 2
+
+pose0_config: [false, false, false,
+              true, true, true,
+              false, false, false,
+              false, false, false,
+              false, false, false]
+
+####################################################################### twist #
+
+twist0: /carla/twist
+
+twist0_port: port1
+
+twist0_twist_rejection_threshold: 2.0
+
+twist0_config: [false, false, false,
+                false, false, false,
+                true, false, false,
+                false, false, true,
+                false, false, false]
+
+twist1: /codbot/twist
+
+twist1_port: port0
+
+twist1_twist_rejection_threshold: 2.0
+
+twist1_config: [false, false, false,
+                false, false, false,
+                true, false, false,
+                false, false, true,
+                false, false, false]
+
+####################################################################### global path #
+
+globalpath0: /optimalTrajectory/globalOptimalPath
+
+globalpath0_port: port0
