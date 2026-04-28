@@ -7,7 +7,7 @@ namespace planningopt{
 
     PlanningOpt::~PlanningOpt(){
         subscribe_thread_.join();
-        // global_thread_.join();
+        global_thread_.join();
         trajectory_thread_.join();
     }
 
@@ -30,6 +30,16 @@ namespace planningopt{
         trajectory_planner_->setPtr(all_subscriber_);
         trajectory_planner_->init();
         trajectory_planner_->execute();
+    }
+
+    void PlanningOpt::GlobalThread(){
+        global_planner_ = std::make_shared<globalplanner::GlobalPlanner>();
+        if(global_planner_->init()){
+            global_planner_->execute();
+        }
+        else{
+            std::cout << "GlobalThread exit" << std::endl;
+        }
     }
 
     void PlanningOpt::execute(){

@@ -22,12 +22,16 @@ namespace planningopt
 
         void TrajectoryThread();
 
+        void GlobalThread();
+
         void execute();
 
     private:
         std::shared_ptr<allsubscriber::AllSubscriber> all_subscriber_;
 
         std::shared_ptr<trajectoryplanner::TrajectoryPlanner> trajectory_planner_;
+
+        std::shared_ptr<globalplanner::GlobalPlanner> global_planner_;
 
         // thread
         std::thread subscribe_thread_;

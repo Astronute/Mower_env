@@ -19,8 +19,11 @@ sensor_timeout: 0.3
 
 sensor_dead: 5.0
 
-# 控制信号发布端口
+# 局部轨迹发布端口
 zmq_pub_port: tcp://*:5557
+
+# 服务端口
+zmq_server_port: tcp://*:5544
 
 # 消息订阅端口
 zmq_sub_port0: tcp://127.0.0.1:5556
