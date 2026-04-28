@@ -45,6 +45,7 @@ namespace planningopt{
     void PlanningOpt::execute(){
         subscribe_thread_ = std::thread(&PlanningOpt::SubscribeThread, this);
         trajectory_thread_ = std::thread(&PlanningOpt::TrajectoryThread, this);
+        global_thread_ = std::thread(&PlanningOpt::GlobalThread, this);
     }
 
 }

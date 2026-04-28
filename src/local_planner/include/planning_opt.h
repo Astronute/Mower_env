@@ -6,6 +6,7 @@
 
 #include "all_subscriber.h"
 #include "trajectory_planner.h"
+#include "global_plan.h"
 
 namespace planningopt
 {

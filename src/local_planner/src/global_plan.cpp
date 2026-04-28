@@ -12,7 +12,7 @@ namespace globalplanner
 
     bool GlobalPlanner::loadParams(){
         try{
-            filter_config_yaml_ = YAML::LoadFile("/home/tom/Mower_env/src/local_planner/params/subscribe_params.yaml");
+            filter_config_yaml_ = YAML::LoadFile("/home/rpdzkj/Mower_env/src/local_planner/params/subscribe_params.yaml");
         } catch(const YAML::Exception& e){
             std::cout << "yaml parsing error: " << e.what() << std::endl;
             return false;
@@ -23,7 +23,9 @@ namespace globalplanner
         if(filter_config_yaml_["zmq_server_port"]){
             std::string port = filter_config_yaml_["zmq_server_port"].as<std::string>();
             zmq_publisher_.initializeRequestHandler(port);
-            zmq_publisher_.setRequestHandler(this->zmq_server_callback);
+            zmq_publisher_.setRequestHandler([this](const std::string& request) -> std::string {
+                return this->zmq_server_callback(request);
+            });
             zmq_publisher_.startRequestHandler();
             std::cout << "controller node publisher bind to: " << port << std::endl;
         }
@@ -56,7 +58,7 @@ namespace globalplanner
         return true;
     }
 
-    string GlobalPlanner::zmq_server_callback(const std::string& request){
+    std::string GlobalPlanner::zmq_server_callback(const std::string& request){
         std::cout << "Received request: " << request << std::endl;
 
         std::string response = "Response to: " + request;

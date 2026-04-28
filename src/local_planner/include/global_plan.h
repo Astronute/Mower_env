@@ -10,6 +10,7 @@
 
 #include "zmq_publisher.h"
 #include "yaml-cpp/yaml.h"
+#include "wall_rate.h"
 
 namespace globalplanner
 {
@@ -25,7 +26,7 @@ namespace globalplanner
 
         bool execute();
 
-        string zmq_server_callback(const std::string& request);
+        std::string zmq_server_callback(const std::string& request);
 
     private:
         YAML::Node filter_config_yaml_;
