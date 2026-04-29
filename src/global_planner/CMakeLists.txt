@@ -9,6 +9,7 @@ find_package(Eigen3 REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(CGAL REQUIRED COMPONENTS Core)
+find_package(nlohmann_json 3.12.0 REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROTO_DIR})
@@ -56,6 +57,7 @@ target_link_libraries(global_planner
   libosqp.so 
   libgeometry_utils.so 
   libyaml-cpp.a 
+  nlohmann_json::nlohmann_json
 )
 
 install(TARGETS

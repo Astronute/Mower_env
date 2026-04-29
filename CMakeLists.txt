@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 添加子目录（按顺序）
 add_subdirectory(src/turn_on_robot ${CMAKE_BINARY_DIR}/turn_on_robot)
 
-# add_subdirectory(src/global_planner ${CMAKE_BINARY_DIR}/global_planner)
+add_subdirectory(src/global_planner ${CMAKE_BINARY_DIR}/global_planner)
 
 add_subdirectory(src/local_planner ${CMAKE_BINARY_DIR}/local_planner)
 

@@ -27,7 +27,7 @@ namespace globalplanner
                 return this->zmq_server_callback(request);
             });
             zmq_publisher_.startRequestHandler();
-            std::cout << "controller node publisher bind to: " << port << std::endl;
+            std::cout << "mission execute server bind to: " << port << std::endl;
         }
         else{
             std::cout << "missing param 'zmq_server_port' " << std::endl;

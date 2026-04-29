@@ -13,7 +13,7 @@ namespace trajectoryplanner
 
     void TrajectoryPlanner::execute(){
         std::array<double, STATE_SIZE> robot_state;
-        WallRate rate(20);
+        WallRate rate(1);
         while(true){
             robot_state = all_subsrciber_->getState();
             std::cout << "robot_x: " << robot_state[StateMemberX] 
