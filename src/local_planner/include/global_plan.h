@@ -39,12 +39,18 @@ namespace globalplanner
 
         std::string zmq_server_callback(const std::string& request);
 
+        void setPtr(std::shared_ptr<allsubscriber::AllSubscriber> _all_subsrciber){
+            this->all_subsrciber_ = _all_subsrciber;
+        }
+
 		auto now() const {
 			return std::chrono::system_clock::now();
 		}
 
     private:
         std::atomic<bool> running_;
+
+        std::shared_ptr<allsubscriber::AllSubscriber> all_subsrciber_;
 
         YAML::Node filter_config_yaml_;
 

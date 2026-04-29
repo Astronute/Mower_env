@@ -48,6 +48,10 @@ namespace allsubscriber{
         cv_.wait(lock, [this]() { return !running_; });
     }
 
+    int AllSubscriber::getSensorState(){
+        return sensor_delayed_.load();
+    }
+
     bool AllSubscriber::loadParams(){
         try{
             filter_config_yaml_ = YAML::LoadFile("/home/rpdzkj/Mower_env/src/local_planner/params/subscribe_params.yaml");

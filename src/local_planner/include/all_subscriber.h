@@ -103,6 +103,8 @@ namespace allsubscriber
 
         void setState(const std::array<double, STATE_SIZE> & state);
 
+		int getSensorState();
+
         void zmq_message_callback(const std::string& message, const std::string& topic);
 
         std::vector<bool> loadUpdateConfig(const std::string & topic_name);

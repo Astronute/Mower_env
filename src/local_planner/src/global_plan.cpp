@@ -100,23 +100,33 @@ namespace globalplanner
     std::string GlobalPlanner::zmq_server_callback(const std::string& request){
         std::cout << "Received request: " << request << std::endl;
 
+        int subsrciber_flag = all_subsrciber_->getSensorState();
+
         std::string mission_dir = request;
-        if(!ReadJson(request)){
-            std::cout << "Failed to read mission file: " << mission_dir << std::endl;
-            return "Failed to read mission file: " + mission_dir;
+        std::string response;
+        if(subsrciber_flag == 0){
+            if(!ReadJson(request)){
+                response = "Failed to read mission file: " + mission_dir;
+            }
+            else{
+                response = "Mission file read successfully: " + mission_dir;
+            }
+        }
+        else{
+            response = "Subscriber state is not good, cannot execute mission: " + mission_dir;
         }
 
-        std::string response = "Response to: " + request;
+
         std::cout << "Sending response: " << response << std::endl;
         return response;
     }
 
     bool GlobalPlanner::execute(){
         WallRate rate(10);
-        double robot2global_dis;
-        
+        double robot_x, robot_y, robot_v, robot_w, robot_yaw, robot2global_dis;
+
         while(running_){
-            std::cout << "global planner running ..." << std::endl;
+            int subsrciber_flag = all_subsrciber_->getSensorState();
             
             rate.sleep();
         }

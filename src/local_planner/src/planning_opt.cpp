@@ -34,6 +34,11 @@ namespace planningopt{
 
     void PlanningOpt::GlobalThread(){
         global_planner_ = std::make_shared<globalplanner::GlobalPlanner>();
+        while(!all_subscriber_){
+            std::cout << "waiting for all_subscriber initialization" << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        global_planner_->setPtr(all_subscriber_);
         if(global_planner_->init()){
             global_planner_->execute();
         }
