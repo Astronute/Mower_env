@@ -40,6 +40,16 @@ add_executable(global_planner
     ${SRC_LIST_} 
 )
 
+add_executable(request_mission_test 
+    ${PROJECT_SOURCE_DIR}/src/test_code/request_mission.cpp
+    ${PROJECT_SOURCE_DIR}/src/zmq_subscriber.cpp
+)
+
+add_executable(run_mission_test 
+    ${PROJECT_SOURCE_DIR}/src/test_code/run_mission.cpp
+    ${PROJECT_SOURCE_DIR}/src/zmq_subscriber.cpp
+)
+
 set_target_properties(global_planner PROPERTIES
     BUILD_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib;${THIRD_PARTY}/geometry_utils/build/lib"
     INSTALL_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib;${THIRD_PARTY}/geometry_utils/build/lib"
@@ -60,7 +70,25 @@ target_link_libraries(global_planner
   nlohmann_json::nlohmann_json
 )
 
+target_link_libraries(request_mission_test 
+  libzmq.so
+)
+
+target_link_libraries(run_mission_test 
+  libzmq.so
+)
+
 install(TARGETS
   global_planner
+  DESTINATION ${PROJECT_INSTALL_PREFIX}/../../../install/${PROJECT_NAME}
+)
+
+install(TARGETS
+  request_mission_test
+  DESTINATION ${PROJECT_INSTALL_PREFIX}/../../../install/${PROJECT_NAME}
+)
+
+install(TARGETS
+  run_mission_test
   DESTINATION ${PROJECT_INSTALL_PREFIX}/../../../install/${PROJECT_NAME}
 )

@@ -11,7 +11,7 @@ int main(){
         std::cout << "Global planner initialize fail" << std::endl;
         return 0;
     }
-    planner->getInfoFromJSON("/home/rpdzkj/Mower_env/src/global_planner/params/mission_test.json");
+    // planner->getInfoFromJSON("/home/rpdzkj/Mower_env/src/global_planner/params/mission_test.json");
 
     // // test zmq client
     // ZmqSubscriber zmq_subscriber;

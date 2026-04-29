@@ -1,0 +1,7 @@
+# subscribe config
+
+debug: false
+
+# 服务端口
+zmq_server_port: tcp://*:5533
+

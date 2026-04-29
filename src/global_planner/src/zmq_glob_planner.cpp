@@ -20,6 +20,37 @@ namespace global_planner{
 
     bool GlobalPlanner::initialize(){
 
+        if(!loadParams()){
+            std::cout << "Failed to load parameters!" << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool GlobalPlanner::loadParams(){
+
+        try{
+            filter_config_yaml_ = YAML::LoadFile("/home/rpdzkj/Mower_env/src/global_planner/params/global_params.yaml");
+        } catch(const YAML::Exception& e){
+            std::cout << "yaml parsing error: " << e.what() << std::endl;
+            return false;
+        }
+
+        if(filter_config_yaml_["zmq_server_port"]){
+            std::string port = filter_config_yaml_["zmq_server_port"].as<std::string>();
+            zmq_publisher_.initializeRequestHandler(port);
+            zmq_publisher_.setRequestHandler([this](const std::string& request) -> std::string {
+                return this->zmq_server_callback(request);
+            });
+            zmq_publisher_.startRequestHandler();
+            std::cout << "mission create server bind to: " << port << std::endl;
+        }
+        else{
+            std::cout << "missing param 'zmq_server_port'" << std::endl;
+            return false;
+        }
+
         return true;
     }
 
@@ -28,10 +59,8 @@ namespace global_planner{
         cv_.wait(lock, [this]() { return !running_; });
     }
 
-    bool GlobalPlanner::getInfoFromJSON(const std::string &file_dir){
+    bool GlobalPlanner::getInfoFromJSON(const std::string &file_dir, MissionInfo &mission_info){
         std::lock_guard<std::mutex> lock(mtx_json_);
-
-        MissionInfo mission_info;
 
         std::ifstream load_file(file_dir);
         nlohmann::json json_tree;
@@ -229,7 +258,7 @@ namespace global_planner{
                 std::cout << "GONG-任务创建成功: " << waypoints_w.size() << std::endl;
             }
             else{
-
+                std::cout << "GONG-任务创建失败: 无有效路径" << std::endl;
             }
         }
         else if(mission.task_type == 2){
@@ -238,5 +267,23 @@ namespace global_planner{
 
     }
 
+    std::string GlobalPlanner::zmq_server_callback(const std::string& request){
+        std::cout << "Received request: " << request << std::endl;
+
+        std::string mission_dir = request;
+        MissionInfo mission_info;
+
+        if(!getInfoFromJSON(mission_dir, mission_info)){
+            std::cout << "get info from json failed. " << std::endl;
+        }
+        else{
+            std::cout << "get info from json success. " << std::endl;
+            runGlobalMission(mission_info);
+        }
+
+        std::string response = "Response to: " + request;
+        std::cout << "Sending response: " << response << std::endl;
+        return response;
+    }
 
 }

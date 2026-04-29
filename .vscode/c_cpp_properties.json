@@ -6,16 +6,11 @@
         "limitSymbolsToIncludedHeaders": false
       },
       "includePath": [
-        "/home/tom/dev_ws/install/robot_msgs_utils/include/**",
-        "/home/tom/dev_ws/install/robot_msgs/include/**",
-        "/home/tom/dev_ws/install/my_interfaces/include/**",
-        "/home/tom/sim_ws/install/wpr_simulation2/include/**",
-        "/opt/ros/humble/include/**",
         "/usr/include/**",
-        "/home/tom/Mower_env/src/msg/generated/**",
-        "/home/tom/Mower_env/src/motion_control/include/**",
-        "/home/tom/Mower_env/src/global_planner/include/**",
-        "/home/tom/Mower_env/src/turn_on_robot/include/**"
+        "/home/rpdzkj/Mower_env/src/msg/generated/**",
+        "/home/rpdzkj/Mower_env/src/motion_control/include/**",
+        "/home/rpdzkj/Mower_env/src/global_planner/include/**",
+        "/home/rpdzkj/Mower_env/src/turn_on_robot/include/**"
       ],
       "name": "ROS",
       "intelliSenseMode": "gcc-x64",

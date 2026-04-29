@@ -8,4 +8,4 @@ protoc --proto_path=. --cpp_out=./generated ./pnc_msgs/point_vec.proto ./pnc_msg
 # build nav_msgs geometry_msgs std_msgs
 protoc --proto_path=. --cpp_out=./generated ./geometry_msgs/point.proto ./geometry_msgs/pose.proto ./geometry_msgs/quaternion.proto \
 ./geometry_msgs/twist.proto ./geometry_msgs/vector3.proto ./geometry_msgs/pose2d.proto ./nav_msgs/odometry.proto \
-./std_msgs/header.proto
+./nav_msgs/path.proto ./std_msgs/header.proto

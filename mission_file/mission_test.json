@@ -1,0 +1,227 @@
+{
+    "features": [
+        {
+            "geometry": null,
+            "properties": {
+                "featureType": "taskConfig",
+                "remarks": "APP创建的作业任务",
+                "robotType": 2,
+                "robotTypeName": "打农药",
+                "taskType": 1,
+                "taskTypeName": "自定义",
+                "workingRotate": 0.0,
+                "workingWidth": 100.0
+            },
+            "type": "Feature"
+        },
+        {
+            "bbox": [
+                4.458136081695557,
+                -15.692146301269531,
+                4.458136081695557,
+                -15.692146301269531
+            ],
+            "geometry": {
+                "coordinates": [
+                    4.458136081695557,
+                    -15.692146301269531,
+                    -0.4560210108757019
+                ],
+                "type": "Point"
+            },
+            "properties": {
+                "altitude": 0,
+                "coordinateSystem": "ENU",
+                "featureType": "homePoint",
+                "name": "返航点",
+                "remarks": "机器返航位置"
+            },
+            "type": "Feature"
+        },
+        {
+            "bbox": [
+                -11.183517456054688,
+                -21.109201431274414,
+                -11.183517456054688,
+                -21.109201431274414
+            ],
+            "geometry": {
+                "coordinates": [
+                    -11.183517456054688,
+                    -21.109201431274414,
+                    -0.418946236371994
+                ],
+                "type": "Point"
+            },
+            "properties": {
+                "altitude": 0,
+                "coordinateSystem": "ENU",
+                "featureType": "startPoint",
+                "name": "起始点",
+                "remarks": "作业开始位置"
+            },
+            "type": "Feature"
+        },
+        {
+            "bbox": [
+                -11.183517456054688,
+                -21.109201431274414,
+                4.460618495941162,
+                -15.692601203918457
+            ],
+            "geometry": {
+                "coordinates": [
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    [
+                        20.0,
+                        0.0,
+                        0.0
+                    ],
+                    [
+                        20.0,
+                        10.0,
+                        0.0
+                    ],
+                    [
+                        0.0,
+                        10.0,
+                        0.0
+                    ],
+                    [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                ],
+                "type": "boundary"
+            }
+        },
+        {
+            "bbox": [
+                -11.183517456054688,
+                -21.109201431274414,
+                -11.183517456054688,
+                -21.109201431274414
+            ],
+            "geometry": {
+                "coordinates": [
+                    [
+                        0.2,
+                        0.2
+                    ],
+                    [
+                        0.2,
+                        9.8
+                    ],
+                    [
+                        5.2,
+                        9.8
+                    ],
+                    [
+                        5.2,
+                        0.2
+                    ],
+                    [
+                        10.200000000000001,
+                        0.2
+                    ],
+                    [
+                        10.200000000000001,
+                        9.8
+                    ],
+                    [
+                        15.200000000000001,
+                        9.8
+                    ],
+                    [
+                        15.200000000000001,
+                        0.2
+                    ]
+                ],
+                "type": "MultiPoint"
+            },
+            "properties": {
+                "coordinateSystem": "ENU",
+                "count": 20,
+                "featureType": "waypoints",
+                "name": "途径点",
+                "remarks": "关键路径点"
+            },
+            "type": "Feature"
+        },
+        {
+            "bbox": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            0.2,
+                            0.2
+                        ],
+                        [
+                            0.2,
+                            9.8
+                        ],
+                        [
+                            5.2,
+                            9.8
+                        ],
+                        [
+                            5.2,
+                            0.2
+                        ],
+                        [
+                            10.200000000000001,
+                            0.2
+                        ],
+                        [
+                            10.200000000000001,
+                            9.8
+                        ],
+                        [
+                            15.200000000000001,
+                            9.8
+                        ],
+                        [
+                            15.200000000000001,
+                            0.2
+                        ]
+                    ]
+                ],
+                "type": "MultiLineString"
+            },
+            "properties": {
+                "coordinateSystem": "ENU",
+                "estimatedTime": 0,
+                "featureType": "workingPath",
+                "name": "计算作业路径",
+                "overlapRate": 0.1,
+                "pathDirection": 90,
+                "pathType": "custom",
+                "pathTypeName": "自定义",
+                "remarks": "APP生成的作业路径",
+                "totalLength": 0.0,
+                "workingWidth": 3.0
+            },
+            "type": "Feature"
+        }
+    ],
+    "properties": {
+        "coordinateSystem": "ENU",
+        "createTime": "2026-04-09T08:41:27.955718Z",
+        "mapId": "map_1775724087955",
+        "mapName": "农田作业区",
+        "updateTime": "2026-04-09T08:41:27.955718Z",
+        "version": "1.0.0"
+    },
+    "type": "FeatureCollection"
+}
