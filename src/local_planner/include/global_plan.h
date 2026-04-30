@@ -20,6 +20,7 @@
 #include "nlohmann/json.hpp"
 #include "wall_rate.h"
 #include "common.h"
+#include "all_subscriber.h"
 
 namespace globalplanner
 {
@@ -39,6 +40,8 @@ namespace globalplanner
 
         std::string zmq_server_callback(const std::string& request);
 
+        bool GeneratorPointPlan(const std::vector<geometry_msgs::Pose> &points_, nav_msgs::Path &traj_);
+
         void setPtr(std::shared_ptr<allsubscriber::AllSubscriber> _all_subsrciber){
             this->all_subsrciber_ = _all_subsrciber;
         }
@@ -57,6 +60,14 @@ namespace globalplanner
         ZmqPublisher zmq_publisher_;
 
         nav_msgs::Path global_path_pub_;
+
+        std::vector<geometry_msgs::Pose> global_way_points_;
+
+        std::vector<geometry_msgs::Pose> map_points_;
+
+        bool task_point_flag_;
+
+        int goal_point_index_;
 
     };
 
