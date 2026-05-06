@@ -12,11 +12,15 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROTO_DIR})
 include_directories(${THIRD_PARTY}/cppzmq-master)
 include_directories(${EIGEN3_INCLUDE_DIRS})
+include_directories(${THIRD_PARTY}/osqp/include)
+include_directories(${THIRD_PARTY}/osqp-eigen/include)
 include_directories(${THIRD_PARTY}/yaml-cpp-master/include)
 
 
 link_directories(${THIRD_PARTY}/libzmq-4.3.5/build/lib)
 link_directories(${THIRD_PARTY}/yaml-cpp-master/lib)
+link_directories(${THIRD_PARTY}/osqp/lib)
+link_directories(${THIRD_PARTY}/osqp-eigen/lib)
 
 file(GLOB SRC_LIST_ 
   ${PROJECT_SOURCE_DIR}/src/*.cpp 
@@ -31,11 +35,20 @@ add_executable(local_planner
     ${SRC_LIST_} 
 )
 
+set_target_properties(local_planner PROPERTIES
+    BUILD_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib"
+    INSTALL_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib"
+    # 设置 RPATH 优先于 LD_LIBRARY_PATH
+    LINK_FLAGS "-Wl,--enable-new-dtags"
+)
+
 target_link_libraries(local_planner 
   ${PROTOBUF_LIBRARIES}
   libzmq.so
   atomic
   libyaml-cpp.a
+  libOsqpEigen.so 
+  libosqp.so 
 )
 
 install(TARGETS

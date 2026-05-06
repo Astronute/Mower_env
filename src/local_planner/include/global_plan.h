@@ -20,7 +20,11 @@
 #include "nlohmann/json.hpp"
 #include "wall_rate.h"
 #include "common.h"
+#include "params.h"
 #include "all_subscriber.h"
+#include "Eigen/Dense"
+#include "Eigen/Sparse"
+#include "OsqpEigen/OsqpEigen.h"
 
 namespace globalplanner
 {
@@ -38,9 +42,27 @@ namespace globalplanner
 
         bool ReadJson(const std::string file_dir);
 
+        int factorial(int n);
+
         std::string zmq_server_callback(const std::string& request);
 
-        bool GeneratorPointPlan(const std::vector<geometry_msgs::Pose> &points_, nav_msgs::Path &traj_);
+        void GetCostFunction(
+            const int n_segment, 
+            const int n_order, 
+            const int cost_snap_jerk, 
+            Eigen::SparseMatrix<double> &H
+        );
+
+        void GetConstraint(
+            const int n_segment, 
+            const int n_order, 
+            const std::vector<naviparams::point> way_points, 
+            Eigen::SparseMatrix<double> &A, 
+            Eigen::VectorXd &lowerBound, 
+            Eigen::VectorXd &upperBound, Eigen::VectorXd &f
+        );
+
+        bool GeneratorPointPlan(const std::vector<naviparams::point> &points_, nav_msgs::Path &traj_);
 
         void setPtr(std::shared_ptr<allsubscriber::AllSubscriber> _all_subsrciber){
             this->all_subsrciber_ = _all_subsrciber;
@@ -57,13 +79,13 @@ namespace globalplanner
 
         YAML::Node filter_config_yaml_;
 
-        ZmqPublisher zmq_publisher_;
+        ZmqPublisher zmq_publisher_, zmq_server_;
 
         nav_msgs::Path global_path_pub_;
 
         std::vector<geometry_msgs::Pose> global_way_points_;
 
-        std::vector<geometry_msgs::Pose> map_points_;
+        std::vector<naviparams::point> map_points_;
 
         bool task_point_flag_;
 
