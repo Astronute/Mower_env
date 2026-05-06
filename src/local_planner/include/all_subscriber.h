@@ -91,9 +91,9 @@ namespace allsubscriber
 
         void reset();
 
-        bool initialize();
+        bool initialize(const YAML::Node & yaml_cfg);
 
-        bool loadParams();
+        bool loadParams(const YAML::Node & yaml_cfg);
 
         void periodicUpdate();
 

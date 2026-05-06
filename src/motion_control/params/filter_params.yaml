@@ -32,6 +32,8 @@ zmq_sub_port0: tcp://127.0.0.1:5556
 
 zmq_sub_port1: tcp://127.0.0.1:5558
 
+zmq_sub_port2: tcp://127.0.0.1:5559
+
 ####################################################################### controller config #
 
 control_frequency: 20.0 # 优先使用controller_params.yaml中设置的频率
@@ -128,7 +130,11 @@ twist1_config: [false, false, false,
 
 localpath0: /optimalTrajectory/localOptimalPath
 
-localpath0_port: port0
+localpath0_port: port2
+
+localpath1: /global_planner/path
+
+localpath1_port: port2
 
 ####################################################################### controller params #
 

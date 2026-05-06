@@ -14,13 +14,8 @@ namespace globalplanner
         running_ = false;
     }
 
-    bool GlobalPlanner::loadParams(){
-        try{
-            filter_config_yaml_ = YAML::LoadFile("/home/rpdzkj/Mower_env/src/local_planner/params/subscribe_params.yaml");
-        } catch(const YAML::Exception& e){
-            std::cout << "yaml parsing error: " << e.what() << std::endl;
-            return false;
-        }
+    bool GlobalPlanner::loadParams(const YAML::Node & yaml_cfg){
+        filter_config_yaml_ = yaml_cfg;
 
         /*-------------------------------- zmq server-----------------------------------------*/
 
@@ -40,27 +35,24 @@ namespace globalplanner
 
         /*-------------------------------- zmq publisher-----------------------------------------*/
 
-        if(filter_config_yaml_["zmq_pub_port"]){
-            std::string port = filter_config_yaml_["zmq_pub_port"].as<std::string>();
-            zmq_publisher_.initialize(port);
-            std::cout << "controller node publisher bind to: " << port << std::endl;
-        }
-        else{
-            std::cout << "missing param 'zmq_pub_port' " << std::endl;
-            return false;
-        }
+        // if(filter_config_yaml_["zmq_pub_port"]){
+        //     std::string port = filter_config_yaml_["zmq_pub_port"].as<std::string>();
+        //     zmq_publisher_.initialize(port);
+        //     std::cout << "global_plan publisher bind to: " << port << std::endl;
+        // }
+        // else{
+        //     std::cout << "missing param 'zmq_pub_port' " << std::endl;
+        //     return false;
+        // }
 
         return true;
     }
 
-    bool GlobalPlanner::init(){
-
-        if(!loadParams()){
+    bool GlobalPlanner::init(const YAML::Node & yaml_cfg){
+        if(!loadParams(yaml_cfg)){
             std::cout << "Failed to load parameters!" << std::endl;
             return false;
         }
-
-
 
         return true;
     }
@@ -396,7 +388,7 @@ namespace globalplanner
             GetConstraint(n_segment, n_order, way_points, A, lowerBound, upperBound, f);
             // log->infoStream() << "GeneratorPointPlan--GetConstraint";
             OsqpEigen::Solver solver;
-            //solver.settings()->setVerbosity(false);
+            solver.settings()->setVerbosity(false);
             solver.settings()->setAlpha(1.6);
             solver.data()->setNumberOfVariables(n);
             #if(1)
@@ -542,10 +534,15 @@ namespace globalplanner
                 if(!map_points_.empty() && GeneratorPointPlan(map_points_, global_traj)){
                     std::string serialized_data;
                     global_traj.SerializeToString(&serialized_data);
-                    zmq_publisher_.publishMessage("/global_planner/path", serialized_data);
+                    // zmq_publisher_.publishMessage("/global_planner/path", serialized_data);
                 }
                 else{
                     global_traj.clear_poses();
+                }
+
+                {
+                    std::lock_guard<std::recursive_mutex> data_out_lock(globalpath_in_mutex_);
+                    global_traj_ = global_traj;
                 }
 
             }

@@ -208,15 +208,15 @@ namespace turn_on_robot{
 
     void TurnOnRobot::zmq_message_callback(const std::string& message, const std::string& topic){
         std::string topic_id = topic_name_map_[topic];
-        
-        if(topic.compare(0, 7, "/cmd_vel") == 0){
-            std::shared_ptr<geometry_msgs::Twist> twist_ptr = std::make_shared<geometry_msgs::Twist>();
+        if(topic.compare(0, 8, "/cmd_vel") == 0){
+            std::shared_ptr<geometry_msgs::TwistStamped> twist_ptr = std::make_shared<geometry_msgs::TwistStamped>();
             if(twist_ptr->ParseFromArray(message.data(), message.size())){
                 // serial
                 std::lock_guard<std::mutex> lock(ctrl_mtx_);
-                cmd_vel_x_ = twist_ptr->linear().x() * 1000; // mm/s
-                cmd_vel_y_ = twist_ptr->linear().y() * 1000;
-                cmd_vel_w_ = twist_ptr->angular().z() * 100; // *100rad/s
+                cmd_vel_x_ = twist_ptr->twist().linear().x() * 1000; // mm/s
+                cmd_vel_y_ = twist_ptr->twist().linear().y() * 1000;
+                cmd_vel_w_ = twist_ptr->twist().angular().z() * 100; // *100rad/s
+                std::cout << "cmd_vel received: x=" << cmd_vel_x_ << " y=" << cmd_vel_y_ << " w=" << cmd_vel_w_ << std::endl;
             }
             else{
                 std::cout << topic_id << "(/cmd_vel) process failed" << std::endl;

@@ -765,7 +765,7 @@ namespace CB {
                     cmd_twist_.mutable_twist()->mutable_angular()->set_z(0.0);
                     std::string serialized_data;
                     cmd_twist_.SerializeToString(&serialized_data);
-                    zmq_publisher_.publishMessage("cmd_vel", serialized_data);
+                    zmq_publisher_.publishMessage("/cmd_vel", serialized_data);
 
                     stratagy_status_ |= 0x40;
 
@@ -801,7 +801,7 @@ namespace CB {
                     cmd_twist_.mutable_twist()->mutable_angular()->set_z(0.0);
                     std::string serialized_data;
                     cmd_twist_.SerializeToString(&serialized_data);
-                    zmq_publisher_.publishMessage("cmd_vel", serialized_data);
+                    zmq_publisher_.publishMessage("/cmd_vel", serialized_data);
                 }
 
                 /*--------------------------------update stratagy priority-----------------------------------------*/
@@ -1086,7 +1086,7 @@ namespace CB {
                 }
                 std::string serialized_data;
                 cmd_twist_.SerializeToString(&serialized_data);
-                zmq_publisher_.publishMessage("cmd_vel", serialized_data);
+                zmq_publisher_.publishMessage("/cmd_vel", serialized_data);
             }
 
 

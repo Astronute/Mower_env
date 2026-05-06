@@ -29,10 +29,10 @@ namespace allsubscriber{
         last_message_times_.clear();
     }
 
-    bool AllSubscriber::initialize(){
+    bool AllSubscriber::initialize(const YAML::Node & yaml_cfg){
         reset();
 
-        if(!loadParams()){
+        if(!loadParams(yaml_cfg)){
             return false;
         }
 
@@ -52,13 +52,8 @@ namespace allsubscriber{
         return sensor_delayed_.load();
     }
 
-    bool AllSubscriber::loadParams(){
-        try{
-            filter_config_yaml_ = YAML::LoadFile("/home/rpdzkj/Mower_env/src/local_planner/params/subscribe_params.yaml");
-        } catch(const YAML::Exception& e){
-            std::cout << "yaml parsing error: " << e.what() << std::endl;
-            return false;
-        }
+    bool AllSubscriber::loadParams(const YAML::Node & yaml_cfg){
+        filter_config_yaml_ = yaml_cfg;
 
         if(filter_config_yaml_["map_frame_id"]){
             map_frame_id_ = filter_config_yaml_["map_frame_id"].as<std::string>();
@@ -135,7 +130,7 @@ namespace allsubscriber{
                 SubscriberConfig sub_cfg;
                 sub_cfg.address = port_addr;
                 zmq_sub_cfgs.push_back(sub_cfg);
-                std::cout << "controller node subscriber " << port_id << " bind to: " << port_addr << std::endl;
+                std::cout << "allsubscriber subscriber " << port_id << " bind to: " << port_addr << std::endl;
             }
         }while(more_params);
 
