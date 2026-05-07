@@ -210,13 +210,13 @@ namespace turn_on_robot{
         std::string topic_id = topic_name_map_[topic];
         if(topic.compare(0, 8, "/cmd_vel") == 0){
             std::shared_ptr<geometry_msgs::TwistStamped> twist_ptr = std::make_shared<geometry_msgs::TwistStamped>();
+
             if(twist_ptr->ParseFromArray(message.data(), message.size())){
-                // serial
                 std::lock_guard<std::mutex> lock(ctrl_mtx_);
+                last_ctrl_stamp_ = navicommon::protoToSystime(twist_ptr->header().stamp());
                 cmd_vel_x_ = twist_ptr->twist().linear().x() * 1000; // mm/s
                 cmd_vel_y_ = twist_ptr->twist().linear().y() * 1000;
                 cmd_vel_w_ = twist_ptr->twist().angular().z() * 100; // *100rad/s
-                std::cout << "cmd_vel received: x=" << cmd_vel_x_ << " y=" << cmd_vel_y_ << " w=" << cmd_vel_w_ << std::endl;
             }
             else{
                 std::cout << topic_id << "(/cmd_vel) process failed" << std::endl;
@@ -414,7 +414,14 @@ namespace turn_on_robot{
     void TurnOnRobot::TimerCallback(){
         {
             std::lock_guard<std::mutex> lock(ctrl_mtx_);
+            double ctrl_delay = navicommon::toSec(this->now() - last_ctrl_stamp_);
+            if(ctrl_delay > 1.0){
+                cmd_vel_x_ = 0;
+                cmd_vel_y_ = 0;
+                cmd_vel_w_ = 0;
+            }
             sendCarControlCmd(serial_fd_, cmd_vel_x_, cmd_vel_y_, cmd_vel_w_);
+            std::cout << "cmd_vel: x=" << cmd_vel_x_ << " y=" << cmd_vel_y_ << " w=" << cmd_vel_w_ << " delay=" << ctrl_delay << std::endl;
         }
     }
 

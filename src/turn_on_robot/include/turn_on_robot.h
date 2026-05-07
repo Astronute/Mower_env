@@ -14,6 +14,7 @@
 #include "timer.h"
 
 #include "yaml-cpp/yaml.h"
+#include "common.h"
 
 #include <vector>
 #include <string>
@@ -132,6 +133,8 @@ namespace turn_on_robot{
         std::mutex ctrl_mtx_;
 
         int16_t cmd_vel_x_, cmd_vel_y_, cmd_vel_w_;
+
+        SysTimePoint last_ctrl_stamp_;
 
         std::unordered_map<std::string, std::string> topic_name_map_;
 
