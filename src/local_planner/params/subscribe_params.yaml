@@ -20,7 +20,7 @@ sensor_timeout: 0.3
 sensor_dead: 5.0
 
 # 局部轨迹发布端口
-zmq_pub_port: tcp://*:5559
+zmq_pub_port: tcp://*:5599
 
 # 服务端口
 zmq_server_port: tcp://*:5544

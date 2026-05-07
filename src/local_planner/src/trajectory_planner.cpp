@@ -44,7 +44,7 @@ namespace trajectoryplanner
         std::array<double, STATE_SIZE> robot_state;
         std::vector<PathPoint> global_path;
         PathPoint point;
-        WallRate rate(1);
+        WallRate rate(25);
 
         while(running_){
             robot_state = all_subsrciber_->getState();
@@ -81,7 +81,15 @@ namespace trajectoryplanner
                     pnc_msgs::PointVec8f p;
                     p.set_x(global_path[i].x);
                     p.set_y(global_path[i].y);
-                    p.set_yaw(global_path[i].yaw);
+                    if(i < global_path.size() - 1){
+                        p.set_yaw(atan2(global_path[i+1].y - global_path[i].y, global_path[i+1].x - global_path[i].x));
+                    }
+                    else if(i > 0){
+                        p.set_yaw(atan2(global_path[i].y - global_path[i-1].y, global_path[i].x - global_path[i-1].x));
+                    }
+                    else{
+                        p.set_yaw(0.0);
+                    }
                     p.set_kappa(global_path[i].kappa);
                     p.set_s(global_path[i].s);
                     p.set_t(navicommon::toSec(this->now()) + i);

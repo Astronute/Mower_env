@@ -348,11 +348,19 @@ namespace turn_on_robot{
                     if(g_tCarImuAttitudeInfo.rollSymbol == 0x01){
                         roll = -1.0 * roll;
                     }
-                    if(g_tCarImuAttitudeInfo.yawSymbol == 0x01){
+                    if(g_tCarImuAttitudeInfo.yawSymbol != 0x01){
                         yaw = -1.0 * yaw;
                     }
 
                     geometry_msgs::Quaternion quat;
+                    yaw = yaw + 0.37;
+                    if(yaw > M_PI){
+                        yaw -= 2 * M_PI;
+                    }
+                    else if(yaw < -M_PI){
+                        yaw += 2 * M_PI;
+                    }
+                    
                     RPYToQuat(roll, pitch, yaw, quat);
                     pose_msg.mutable_pose()->mutable_pose()->mutable_orientation()->CopyFrom(quat);
                     if(!sensor_covariance_map_["imu_odom"].empty()){
@@ -406,7 +414,7 @@ namespace turn_on_robot{
     void TurnOnRobot::TimerCallback(){
         {
             std::lock_guard<std::mutex> lock(ctrl_mtx_);
-            // sendCarControlCmd(serial_fd_, cmd_vel_x_, cmd_vel_y_, cmd_vel_w_);
+            sendCarControlCmd(serial_fd_, cmd_vel_x_, cmd_vel_y_, cmd_vel_w_);
         }
     }
 
