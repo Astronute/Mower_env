@@ -8,10 +8,6 @@ namespace CB {
     using namespace std::chrono_literals;
 
     RosController::RosController(): 
-        sensor_timeout_(0.1),
-        local_path_timeout_(1.0),
-        sensor_dead_(3.0),
-        last_measurement_time_(std::chrono::seconds(0)),
         controller_run_status_(CONTROL_FREE),
         controller_run_mode_(UNDEFINED_CMD),
         running_(true)
@@ -22,28 +18,15 @@ namespace CB {
     RosController::~RosController(){
         // topic_subs_.clear();
         running_ = false;
-        timer_.stop();
         cv_.notify_one();
-        while(!measurement_queue_.empty()){
-            measurement_queue_.pop();
-        }
-        trajectory_queue_.clear();
+        control_thread_.join();
+        std::cout << "control thread exit." << std::endl;
     }
 
     void RosController::reset(){
         controller_run_status_ = ControllerRunStatus::CONTROL_FREE;
         controller_run_mode_ = ControllerMode::UNDEFINED_CMD;
 
-        std::array<double, STATE_SIZE> state_vec;
-        state_vec.fill(0.0);
-        setState(state_vec);
-
-        sensor_delayed_.store(2);
-        local_path_delayed_.store(false);
-
-        trajectory_queue_.clear();
-
-        last_message_times_.clear();
     }
 
     void RosController::spin(){
@@ -51,7 +34,7 @@ namespace CB {
         cv_.wait(lock, [this]() { return !running_; });
     }
 
-    bool RosController::initialize(){
+    bool RosController::initialize(const YAML::Node & yaml_cfg){
 
         reset();
 
@@ -64,34 +47,20 @@ namespace CB {
             std::cout << "control_frequency set to " << control_frequency_ << std::endl;
         }
 
-        if(!loadParams()){
+        if(!loadParams(yaml_cfg)){
             return false;
         }
-
-        
-        // 定时器线程，处理传感器
-        const std::chrono::duration<double> timespan{1.0 / sample_frequency_};
-        timer_.start(std::chrono::duration_cast<std::chrono::nanoseconds>(timespan), std::bind(&RosController::periodicUpdate, this));
         
         // 控制线程
-        std::thread control_thread(&RosController::periodicControl, this);
-        control_thread.detach();
+        control_thread_ = std::thread(&RosController::periodicControl, this);
 
         return true;
 
     }
 
-    bool RosController::loadParams(){
-        try{
-            #ifdef USE_SIM
-            filter_config_yaml_ = YAML::LoadFile("/home/tom/Mower_env/src/motion_control/params/filter_params.yaml");
-            #else
-            filter_config_yaml_ = YAML::LoadFile("/home/rpdzkj/Mower_env/src/motion_control/params/filter_params.yaml");
-            #endif
-        } catch(const YAML::Exception& e){
-            std::cout << "yaml parsing error: " << e.what() << std::endl;
-            return false;
-        }
+    bool RosController::loadParams(const YAML::Node & yaml_cfg){
+
+        filter_config_yaml_ = yaml_cfg;
 
         if(filter_config_yaml_["map_frame_id"]){
             map_frame_id_ = filter_config_yaml_["map_frame_id"].as<std::string>();
@@ -121,40 +90,12 @@ namespace CB {
             std::cout << "missing param 'world_frame_id' " << std::endl;
             return false;
         }
-        if(filter_config_yaml_["sample_frequency"]){
-            sample_frequency_ = filter_config_yaml_["sample_frequency"].as<double>();
-        }
-        else{
-            std::cout << "missing param 'sample_frequency' " << std::endl;
-            return false;
-        }
 
         if(!mpc_controller_.is_initialized()){
             control_frequency_ = filter_config_yaml_["control_frequency"].as<double>();
             std::cout << "control_frequency set to " << control_frequency_ << std::endl;
         }
 
-        if(filter_config_yaml_["sensor_timeout"]){
-            sensor_timeout_ = filter_config_yaml_["sensor_timeout"].as<double>();
-        }
-        else{
-            std::cout << "missing param 'sensor_timeout'" << std::endl;
-            return false;
-        }
-        if(filter_config_yaml_["local_path_timeout"]){
-            local_path_timeout_ = filter_config_yaml_["local_path_timeout"].as<double>();
-        }
-        else{
-            std::cout << "missing param 'local_path_timeout'" << std::endl;
-            return false;
-        }
-        if(filter_config_yaml_["sensor_dead"]){
-            sensor_dead_ = filter_config_yaml_["sensor_dead"].as<double>();
-        }
-        else{
-            std::cout << "missing param 'sensor_dead'" << std::endl;
-            return false;
-        }
         if(filter_config_yaml_["t_delta_max"]){
             t_delta_max_ = filter_config_yaml_["t_delta_max"].as<double>();
         }
@@ -170,239 +111,9 @@ namespace CB {
             return false;
         }
 
-        std::cout << "now: " << toSec(this->now()) << std::endl;
-
-        /*-------------------------------- zmq publisher-----------------------------------------*/
-
-        if(filter_config_yaml_["zmq_pub_port"]){
-            std::string port = filter_config_yaml_["zmq_pub_port"].as<std::string>();
-            zmq_publisher_.initialize(port);
-            std::cout << "controller node publisher bind to: " << port << std::endl;
-        }
-        else{
-            std::cout << "missing param 'zmq_pub_port' " << std::endl;
-            return false;
-        }
-
-        /*-------------------------------- zmq subscribe-----------------------------------------*/
-        std::vector<SubscriberConfig> zmq_sub_cfgs;
-
-        size_t port_ind = 0;
-        bool more_params = false;
-        do{
-            std::stringstream ss;
-            ss << "zmq_sub_port" << port_ind++;
-            std::string port_id = ss.str();
-            std::string port_addr;
-            if(filter_config_yaml_[port_id]){
-                more_params = true;
-                port_addr = filter_config_yaml_[port_id].as<std::string>();
-            }
-            else{
-                more_params = false;
-            }
-
-            if(more_params){
-                SubscriberConfig sub_cfg;
-                sub_cfg.address = port_addr;
-                zmq_sub_cfgs.push_back(sub_cfg);
-                std::cout << "controller node subscriber " << port_id << " bind to: " << port_addr << std::endl;
-            }
-        }while(more_params);
-
-        // odom subscribe
-        size_t topic_ind = 0;
-        more_params = false;
-        do{
-            std::stringstream ss;
-            ss << "odom" << topic_ind++;
-            std::string odom_name = ss.str();
-            std::string odom_topic;
-            if(filter_config_yaml_[odom_name]){
-                more_params = true;
-                odom_topic = filter_config_yaml_[odom_name].as<std::string>();
-            }
-            else{
-                more_params = false;
-            }
-
-            if(more_params){
-                int port_idx = 0;
-                std::string str = filter_config_yaml_[odom_name + "_port"].as<std::string>().substr(4);
-                try {
-                    port_idx = std::stoi(str);
-                    if(port_idx > zmq_sub_cfgs.size()){
-                        std::cout << odom_name << " port id out of range" << std::endl;
-                        return false;
-                    }
-                } catch (const std::exception& e) {
-                    std::cerr << str <<" parse error: " << e.what() << std::endl;
-                }
-
-                double pose_mahalanobis_threshold = filter_config_yaml_[odom_name + "_pose_rejection_threshold"].as<double>();
-                double twist_mahalanobis_threshold = filter_config_yaml_[odom_name + "_twist_rejection_threshold"].as<double>();
-
-                std::vector<bool> update_vec = loadUpdateConfig(odom_name);
-                std::vector<bool> pose_update_vec = update_vec;
-                std::fill(pose_update_vec.begin() + POSITION_V_OFFSET, pose_update_vec.begin() + POSITION_V_OFFSET + TWIST_SIZE, 0);
-                std::vector<bool> twist_update_vec = update_vec;
-                std::fill(twist_update_vec.begin() + POSITION_OFFSET, twist_update_vec.begin() + POSITION_OFFSET + POSE_SIZE, 0);
-                int pose_update_num = std::accumulate(pose_update_vec.begin(), pose_update_vec.end(), 0);
-                int twist_update_num = std::accumulate(twist_update_vec.begin(), twist_update_vec.end(), 0);
-
-                if(pose_update_num + twist_update_num > 0){
-                    const CallBackInfo pose_callback_info(odom_name + "_pose", pose_update_vec, pose_update_num, pose_mahalanobis_threshold);
-                    const CallBackInfo twist_callback_info(odom_name + "_twist", twist_update_vec, twist_update_num, twist_mahalanobis_threshold);
-                    topic_callbackinfo_map_[odom_name + "_pose"] = pose_callback_info;
-                    topic_callbackinfo_map_[odom_name + "_twist"] = twist_callback_info;
-                    topic_name_map_[odom_topic] = odom_name;
-
-                    zmq_sub_cfgs[port_idx].topics.push_back(odom_topic);
-                }
-                else{
-                    std::cout << odom_topic << " all update variables are false " << std::endl;
-                }
-            }
-
-        }while(more_params);
-
-        // pose subscribe
-        topic_ind = 0;
-        more_params = false;
-        do{
-            std::stringstream ss;
-            ss << "pose" << topic_ind++;
-            std::string pose_name = ss.str();
-            std::string pose_topic;
-            if(filter_config_yaml_[pose_name]){
-                more_params = true;
-                pose_topic = filter_config_yaml_[pose_name].as<std::string>();
-            }
-            else{
-                more_params = false;
-            }
-
-            if(more_params){
-                int port_idx = 0;
-                std::string str = filter_config_yaml_[pose_name + "_port"].as<std::string>().substr(4);
-                try {
-                    port_idx = std::stoi(str);
-                    if(port_idx > zmq_sub_cfgs.size()){
-                        std::cout << pose_name << " port id out of range" << std::endl;
-                        return false;
-                    }
-                } catch (const std::exception& e) {
-                    std::cerr << str << " parse error: " << e.what() << std::endl;
-                }
-
-                double pose_rejection_threshold = filter_config_yaml_[pose_name + "_rejection_threshold"].as<double>();
-                std::vector<bool> pose_update_mask = loadUpdateConfig(pose_name);
-                std::fill(pose_update_mask.begin() + POSITION_V_OFFSET, pose_update_mask.begin() + POSITION_V_OFFSET + TWIST_SIZE, 0);
-                std::fill(pose_update_mask.begin() + POSITION_A_OFFSET, pose_update_mask.begin() + POSITION_A_OFFSET + ACCELERATION_SIZE, 0);
-
-                int pose_update_sum = std::accumulate(pose_update_mask.begin(), pose_update_mask.end(), 0);
-                if(pose_update_sum > 0){
-                    const CallBackInfo callback_info(pose_name, pose_update_mask, pose_update_sum, pose_rejection_threshold);
-                    topic_callbackinfo_map_[pose_name] = callback_info;
-                    topic_name_map_[pose_topic] = pose_name;
-
-                    zmq_sub_cfgs[port_idx].topics.push_back(pose_topic);
-                }
-                else{
-                    std::cout << pose_topic << " all update variables are false " << std::endl;
-                }
-            }
-
-        }while(more_params);
-
-        // twist subscribe
-        topic_ind = 0;
-        more_params = false;
-        do{
-            std::stringstream ss;
-            ss << "twist" << topic_ind++;
-            std::string twist_name = ss.str();
-            std::string twist_topic;
-            if(filter_config_yaml_[twist_name]){
-                more_params = true;
-                twist_topic = filter_config_yaml_[twist_name].as<std::string>();
-            }
-            else{
-                more_params = false;
-            }
-
-            if(more_params){
-                int port_idx = 0;
-                std::string str = filter_config_yaml_[twist_name + "_port"].as<std::string>().substr(4);
-                try {
-                    port_idx = std::stoi(str);
-                    if(port_idx > zmq_sub_cfgs.size()){
-                        std::cout << twist_name << " port id out of range" << std::endl;
-                        return false;
-                    }
-                } catch (const std::exception& e) {
-                    std::cerr << str << " parse error: " << e.what() << std::endl;
-                }
-
-                double twist_mahalanobis_threshold = filter_config_yaml_[twist_name + "_twist_rejection_threshold"].as<double>();
-                std::vector<bool> update_vec = loadUpdateConfig(twist_name);
-                std::fill(update_vec.begin() + POSITION_OFFSET, update_vec.begin() + POSITION_OFFSET + POSE_SIZE, 0);
-                int twist_update_sum = std::accumulate(update_vec.begin(), update_vec.end(), 0);
-
-                if(twist_update_sum > 0){
-                    const CallBackInfo callback_info(twist_topic, update_vec, twist_update_sum, twist_mahalanobis_threshold);
-                    topic_callbackinfo_map_[twist_name] = callback_info;
-                    topic_name_map_[twist_topic] = twist_name;
-
-                    zmq_sub_cfgs[port_idx].topics.push_back(twist_topic);
-                }
-                else{
-                    std::cout << twist_topic << " all update variables are false " << std::endl;
-                }
-            }
-
-        }while(more_params);
-
-        // local path subscribe
-        topic_ind = 0;
-        more_params = false;
-        do{
-            std::stringstream ss;
-            ss << "localpath" << topic_ind++;
-            std::string localpath_name = ss.str();
-            std::string localpath_topic;
-            if(filter_config_yaml_[localpath_name]){
-                more_params = true;
-                localpath_topic = filter_config_yaml_[localpath_name].as<std::string>();
-            }
-            else{
-                more_params = false;
-            }
-
-            if(more_params){
-                int port_idx = 0;
-                std::string str = filter_config_yaml_[localpath_name + "_port"].as<std::string>().substr(4);
-                try {
-                    port_idx = std::stoi(str);
-                    if(port_idx > zmq_sub_cfgs.size()){
-                        std::cout << localpath_name << " port id out of range" << std::endl;
-                        return false;
-                    }
-                } catch (const std::exception& e) {
-                    std::cerr << str << " parse error: " << e.what() << std::endl;
-                }
-
-                topic_name_map_[localpath_topic] = localpath_name;
-
-                zmq_sub_cfgs[port_idx].topics.push_back(localpath_topic);
-            }
-
-        }while(more_params);
-
-
         // mpc parameters load
-        topic_ind = 0;
-        more_params = false;
+        int topic_ind = 0;
+        bool more_params = false;
         do{
             std::stringstream ss;
             ss << "mpc" << topic_ind++;
@@ -417,314 +128,38 @@ namespace CB {
             }
 
             if(more_params){
-                std::vector<double> q, r, f;
-                loadParamMatrix(controller_name, q, r, f);
+                std::vector<double> q, r;
+                loadParamMatrix(controller_name, q, r);
                 matrix_params_q_[param_name] = q;
                 matrix_params_r_[param_name] = r;
                 std::cout << param_name << std::endl;
                 std::cout << "Q: ";
-                printVector(q);
+                common::printVector(q);
                 std::cout << "R: ";
-                printVector(r);
+                common::printVector(r);
             }
 
         }while(more_params);
 
-        
-        zmq_subscriber_.initialize(zmq_sub_cfgs);
-        zmq_subscriber_.setMessageCallback([this](const std::string& msg, const std::string& topic) {
-            this->zmq_message_callback(msg, topic);}
-        );
-        zmq_subscriber_.start();
+        /*-------------------------------- zmq publisher-----------------------------------------*/
+
+        if(filter_config_yaml_["zmq_pub_port"]){
+            std::string port = filter_config_yaml_["zmq_pub_port"].as<std::string>();
+            zmq_publisher_.initialize(port);
+            std::cout << "controller node publisher bind to: " << port << std::endl;
+        }
+        else{
+            std::cout << "missing param 'zmq_pub_port' " << std::endl;
+            return false;
+        }
+
+        std::cout << "now: " << common::toSec(this->now()) << std::endl;
+
         std::cout << "param load success." << std::endl;
         return true;
     }
 
-    void RosController::odometryCallback(
-        const std::shared_ptr<nav_msgs::Odometry> & msg,
-        const std::string & topic_name,
-        const CallBackInfo & pose_callback_info,
-        const CallBackInfo & twist_callback_info
-    ){
-        std::shared_ptr<nav_msgs::Odometry> odom_ptr = std::make_shared<nav_msgs::Odometry>();
-
-        // 处理callback中的pose类数据（xyz，rpy）
-        std::shared_ptr<geometry_msgs::PoseWithCovarianceStamped> pos_ptr = std::make_shared<geometry_msgs::PoseWithCovarianceStamped>();
-        if(pose_callback_info.update_sum_ > 0){
-            pos_ptr->mutable_header()->CopyFrom(msg->header());
-            pos_ptr->mutable_pose()->CopyFrom(msg->pose());
-            // std::cout << "odometryCallback " << pos_ptr->pose().pose().position().x() << " - " << pos_ptr->pose().pose().position().y() << std::endl;
-
-            poseCallback(pos_ptr, pose_callback_info, world_frame_id_, base_link_frame_id_, false);
-        }
-
-        std::shared_ptr<geometry_msgs::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::TwistWithCovarianceStamped>();
-        if(twist_callback_info.update_sum_ > 0){
-            twist_ptr->mutable_header()->CopyFrom(msg->header());
-            twist_ptr->mutable_twist()->CopyFrom(msg->twist());
-            twist_ptr->mutable_header()->set_frame_id(msg->child_frame_id());
-            std::cout << "odometryCallback" << twist_ptr->twist().twist().linear().x() << " - " << twist_ptr->twist().twist().angular().z() << std::endl;
-
-            twistCallback(twist_ptr, twist_callback_info, base_link_frame_id_);
-        }
-    }
-
-    void RosController::poseCallback(
-        const std::shared_ptr<geometry_msgs::PoseWithCovarianceStamped> & msg,
-        const CallBackInfo & callback_info,
-        const std::string & target_frame,
-        const std::string & source_frame,
-        const bool imu_data
-    ){
-        const std::string topic_name = callback_info.topic_name_;
-        SysTimePoint msg_sys_time = protoToSystime(msg->header().stamp());
-
-        if(last_message_times_.count(topic_name) == 0){
-            last_message_times_.insert(std::pair<std::string, SysTimePoint>(topic_name, this->now()));
-        }
-
-        if(last_message_times_[topic_name] <= msg_sys_time){
-            Eigen::VectorXd measurement(STATE_SIZE);
-            Eigen::MatrixXd measurement_covariance(STATE_SIZE, STATE_SIZE);
-            measurement.setZero();
-            measurement_covariance.setZero();
-            Eigen::MatrixXd covariance_rotated(POSE_SIZE, POSE_SIZE);
-            covariance_rotated.setZero();
-            std::vector<bool> update_vector = callback_info.update_mask_;
-
-            measurement(StateMemberX) = msg->pose().pose().position().x();//msg->pose.pose.position.x;
-            measurement(StateMemberY) = msg->pose().pose().position().y();
-            measurement(StateMemberZ) = msg->pose().pose().position().z();
-            double roll, pitch, yaw;
-            quatToRPY(msg->pose().pose().orientation(), roll, pitch, yaw);
-            measurement(StateMemberRoll) = roll;
-            measurement(StateMemberPitch) = pitch;
-            measurement(StateMemberYaw) = yaw;
-            measurement_covariance.block(0, 0, POSE_SIZE, POSE_SIZE) = covariance_rotated.block(0, 0, POSE_SIZE, POSE_SIZE);
-
-            copyCovariance(msg->pose().covariance().data(), covariance_rotated, topic_name, update_vector, POSITION_OFFSET, POSE_SIZE);
-
-            pushQueueMeasurement(topic_name, 
-                measurement, 
-                measurement_covariance, 
-                update_vector, 
-                callback_info.rejection_threshold_, 
-                msg_sys_time
-            );
-
-            last_message_times_[topic_name] = protoToSystime(msg->header().stamp());
-            double last_update_delta = toSec(this->now() - msg_sys_time);
-            if(last_update_delta > sensor_dead_){
-                sensor_delayed_.store(2);
-                std::cout << topic_name << " time out: " << last_update_delta << std::endl;
-            }
-            else if(last_update_delta > sensor_timeout_){
-                sensor_delayed_.store(1);
-                std::cout << topic_name << " time out: " << last_update_delta << std::endl;
-            }
-            else{
-                sensor_delayed_.store(0);
-            }
-            
-        }
-        else{
-            std::cout << "Message is too old. Last message time for " << topic_name << " is " <<
-                toSec(last_message_times_[topic_name]) << ", current message time is " << toSec(msg_sys_time) << std::endl;
-        }
-    }
-
-    void RosController::twistCallback(
-        const std::shared_ptr<geometry_msgs::TwistWithCovarianceStamped> & msg,
-        const CallBackInfo & callback_info,
-        const std::string & target_frame
-    ){
-        const std::string & topic_name = callback_info.topic_name_;
-        SysTimePoint msg_sys_time = protoToSystime(msg->header().stamp());
-
-        if(last_message_times_.count(topic_name) == 0){
-            last_message_times_.insert(std::pair<std::string, SysTimePoint>(topic_name, msg_sys_time));
-        }
-
-        if(last_message_times_[topic_name] <= msg_sys_time){
-            Eigen::VectorXd measurement(STATE_SIZE);
-            Eigen::MatrixXd measurement_covariance(STATE_SIZE, STATE_SIZE);
-            measurement.setZero();
-            measurement_covariance.setZero();
-
-            std::vector<bool> update_vector = callback_info.update_mask_;
-            measurement(StateMemberVx) = msg->twist().twist().linear().x();
-            measurement(StateMemberVy) = msg->twist().twist().linear().y();
-            measurement(StateMemberVz) = msg->twist().twist().linear().z();
-            measurement(StateMemberGx) = msg->twist().twist().angular().x();
-            measurement(StateMemberGy) = msg->twist().twist().angular().y();
-            measurement(StateMemberGz) = msg->twist().twist().angular().z();
-
-            Eigen::MatrixXd covariance_rotated(TWIST_SIZE, TWIST_SIZE);
-            covariance_rotated.setZero();
-            if(!msg->twist().covariance().data()){
-                std::cout << topic_name << " covariance empty" << std::endl;
-                return ;
-            }
-            copyCovariance(msg->twist().covariance().data(), covariance_rotated, topic_name, update_vector, POSITION_V_OFFSET, TWIST_SIZE);
-            measurement_covariance.block(POSITION_V_OFFSET, POSITION_V_OFFSET, TWIST_SIZE, TWIST_SIZE) = covariance_rotated.block(0, 0, TWIST_SIZE, TWIST_SIZE);
-
-            pushQueueMeasurement(
-                callback_info.topic_name_, 
-                measurement, 
-                measurement_covariance, 
-                update_vector, 
-                callback_info.rejection_threshold_, 
-                msg_sys_time
-            );
-
-            last_message_times_[topic_name] = msg_sys_time;
-            double last_update_delta = toSec(this->now() - msg_sys_time);
-            if(last_update_delta > sensor_timeout_){
-                sensor_delayed_.store(1);
-                std::cout << topic_name << " time out: " << last_update_delta << std::endl;
-            }
-            else{
-                sensor_delayed_.store(0);
-            }
-        }
-        else{
-            std::cout << "Message is too old. Last message time for " << topic_name << " is " <<
-                toSec(last_message_times_[topic_name]) << ", current message time is " << toSec(msg_sys_time) << std::endl;
-        }
-    }
-    
-    void RosController::trajectoryCallback(
-        const std::shared_ptr<pnc_msgs::PlanningTrajectory> & msg,
-        const std::string & topic_name,
-        const std::string & target_frame
-    ){
-        SysTimePoint msg_sys_time = protoToSystime(msg->header().stamp());
-
-        if(msg->trajectory_size() < 1){
-            std::cout << "topic_name: " << topic_name << " get loaclTraj empty." << std::endl;
-            return ;
-        }
-
-        if(last_message_times_.count(topic_name) == 0){
-            last_message_times_.insert(std::pair<std::string, SysTimePoint>(topic_name, msg_sys_time));
-        }
-
-        if(last_message_times_[topic_name] <= msg_sys_time){
-            std::vector<TrajPoint> local_optimal_trajectory;
-            TrajPoint traj_point;
-            for(int i=0; i<msg->trajectory_size(); ++i){
-                const pnc_msgs::PointVec8f& point = msg->trajectory(i);
-                traj_point.path_point.x = point.x();
-                traj_point.path_point.y = point.y();
-                traj_point.path_point.yaw = point.yaw();
-                traj_point.path_point.kappa = point.kappa();
-                traj_point.path_point.s = point.s();
-                traj_point.t = point.t();
-                traj_point.v = point.v();
-                traj_point.w = point.w();
-                local_optimal_trajectory.push_back(traj_point);
-            }
-
-            trajectory_queue_.push(local_optimal_trajectory);
-
-            last_message_times_[topic_name] = msg_sys_time;
-            double last_update_delta = toSec(this->now() - msg_sys_time);
-            if(last_update_delta > local_path_timeout_){
-                local_path_delayed_.store(1);
-                std::cout << topic_name << " time out: " << last_update_delta << std::endl;
-            }
-            else{
-                local_path_delayed_.store(0);
-            }
-
-        }
-        else{
-            std::cout << "Message is too old. Last message time for " << topic_name << " is " <<
-                toSec(last_message_times_[topic_name]) << ", current message time is " << toSec(msg_sys_time) << std::endl;
-        }
-
-    }
-
-    void RosController::zmq_message_callback(const std::string& message, const std::string& topic){
-        std::string topic_name = topic_name_map_[topic];
-        
-        if(topic_name.compare(0, 4, "odom") == 0){
-            CallBackInfo call_backinfo_pose = topic_callbackinfo_map_[topic_name + "_pose"];
-            CallBackInfo call_backinfo_twist = topic_callbackinfo_map_[topic_name + "_twist"];
-            std::shared_ptr<nav_msgs::Odometry> odom_ptr = std::make_shared<nav_msgs::Odometry>();
-            if(odom_ptr->ParseFromArray(message.data(), message.size())){
-                odometryCallback(odom_ptr, topic_name, call_backinfo_pose, call_backinfo_twist);
-            }
-            else{
-                std::cout << topic_name << " process failed" << std::endl;
-            }
-        }
-        else if(topic_name.compare(0, 4, "pose") == 0){
-            CallBackInfo call_backinfo = topic_callbackinfo_map_[topic_name];
-            std::shared_ptr<geometry_msgs::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::PoseWithCovarianceStamped>();
-            if(pose_ptr->ParseFromArray(message.data(), message.size())){
-                poseCallback(pose_ptr, call_backinfo, world_frame_id_, base_link_frame_id_, false);
-            }
-            else{
-                std::cout << topic_name << " process failed" << std::endl;
-            }
-        }
-        else if(topic_name.compare(0, 5, "twist") == 0){
-            CallBackInfo call_backinfo = topic_callbackinfo_map_[topic_name];
-            std::shared_ptr<geometry_msgs::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::TwistWithCovarianceStamped>();
-            if(twist_ptr->ParseFromArray(message.data(), message.size())){
-                twistCallback(twist_ptr, call_backinfo, base_link_frame_id_);
-            }
-            else{
-                std::cout << topic_name << " process failed" << std::endl;
-            }
-        }
-        else if(topic_name.compare(0, 5, "local") == 0){
-            std::shared_ptr<pnc_msgs::PlanningTrajectory> traj_ptr = std::make_shared<pnc_msgs::PlanningTrajectory>();
-            if(traj_ptr->ParseFromArray(message.data(), message.size())){
-                trajectoryCallback(traj_ptr, topic_name, base_link_frame_id_);
-            }
-            else{
-                std::cout << topic_name << " process failed" << std::endl;
-            }
-        }
-
-    }
-
-    void RosController::periodicUpdate(){
-        // std::cout << " measurement process running " << std::endl;
-
-        SysTimePoint current_time = this->now();
-
-        if(!measurement_queue_.empty()){
-            while(!measurement_queue_.empty()){
-                MeasurementPtr measurement = measurement_queue_.front();
-                if(current_time < measurement->time_){
-                    break;
-                }
-                measurement_queue_.pop();
-                size_t measurement_length = measurement->update_mask_.size();
-                std::array<double, STATE_SIZE> state_vec = getState();
-                for(size_t i=0; i< measurement_length; ++i){
-                    state_vec[i] = measurement->update_mask_[i] ? measurement->measurement_[i] : state_vec[i];
-                }
-                setState(state_vec);
-                last_measurement_time_ = measurement->time_;
-            }
-        }
-        else{
-            double last_update_delta = toSec(current_time - last_measurement_time_);
-            if(last_update_delta >= sensor_dead_){
-                std::cout << "all sensor dead" << std::endl;
-                sensor_delayed_.store(2);
-            }
-        }
-
-    }
-
     void RosController::periodicControl(){
-
-        std::array<double, STATE_SIZE> robot_state;
         controller_run_status_ = CONTROL_FREE;
         stratagy_status_ = 0x00;
         double control_duration = 0;
@@ -734,7 +169,7 @@ namespace CB {
         double cmd_vel_w = 0.0;
         WallRate rate_control_(control_frequency_);
 
-        while(true){
+        while(running_){
 
             clock_t time_begin_cpu = clock();
 
@@ -743,57 +178,34 @@ namespace CB {
             /*--------------------------------get robot state-----------------------------------------*/
 
             // check sensor data
-            int sensor_delayed = sensor_delayed_.load();
-            bool local_path_delayed = local_path_delayed_.load();
+            std::array<double, allsubscriber::STATE_SIZE> robot_state;
+            std::vector<allsubscriber::TrajPoint>().swap(local_optimal_trajectory_);
+            bool sensor_valid = all_subscriber_->getState(robot_state);
+            bool local_path_valid = all_subscriber_->getLocalTrajectory(local_optimal_trajectory_);
             
             last_cmd_twist_ = cmd_twist_;
             SysTimePoint ctrl_sys_now = this->now();
-            cmd_twist_.mutable_header()->mutable_stamp()->CopyFrom(systimeToProto(ctrl_sys_now));
+            cmd_twist_.mutable_header()->mutable_stamp()->CopyFrom(common::systimeToProto(ctrl_sys_now));
             // std::cout << "sensor_delayed: " << sensor_delayed << std::endl;
-            if(sensor_delayed || local_path_delayed){
-                if(sensor_delayed > 1){
-                    std::cout << "localization dead, stop" << std::endl;
-                    stratagy_status_ |= 0x80;
-                }
-                else{
-                    std::cout << "local path or odom or twist delayed, slowly stop" << std::endl;
-                    robot_state = getState();
-                    cmd_twist_.mutable_twist()->mutable_linear()->set_x(robot_state[StateMemberVx] - 0.1);
-                    if(cmd_twist_.twist().linear().x() < 0){
-                        cmd_twist_.mutable_twist()->mutable_linear()->set_x(0.0);
-                    }
-                    cmd_twist_.mutable_twist()->mutable_angular()->set_z(0.0);
-                    std::string serialized_data;
-                    cmd_twist_.SerializeToString(&serialized_data);
-                    zmq_publisher_.publishMessage("/cmd_vel", serialized_data);
-
-                    stratagy_status_ |= 0x40;
-
-                    rate_control_.sleep();
-                    continue;
-                }
+            if(!sensor_valid){
+                std::cout << "localization dead, stop" << std::endl;
+                stratagy_status_ |= 0x80;
             }
             else{ // normal situation
                 // robot state
-                robot_state = getState();
-                std::cout << "robot_x: " << robot_state[StateMemberX] 
-                    << " , robot_y: " << robot_state[StateMemberY] 
-                    << " , robot_yaw: " << robot_state[StateMemberYaw] 
-                    << " , robot_v: " << robot_state[StateMemberVx] 
-                    << " , robot_w: " << robot_state[StateMemberGz] 
+                std::cout << "robot_x: " << robot_state[allsubscriber::StateMemberX] 
+                    << " , robot_y: " << robot_state[allsubscriber::StateMemberY] 
+                    << " , robot_yaw: " << robot_state[allsubscriber::StateMemberYaw] 
+                    << " , robot_v: " << robot_state[allsubscriber::StateMemberVx] 
+                    << " , robot_w: " << robot_state[allsubscriber::StateMemberGz] 
                     << std::endl;
-                robot_pose_.set_x(robot_state[StateMemberX]);
-                robot_pose_.set_y(robot_state[StateMemberY]);
-                robot_pose_.set_theta(robot_state[StateMemberYaw]);
-                robot_twist_.mutable_linear()->set_x(robot_state[StateMemberVx]);
-                robot_twist_.mutable_angular()->set_z(robot_state[StateMemberGz]);
+                robot_pose_.set_x(robot_state[allsubscriber::StateMemberX]);
+                robot_pose_.set_y(robot_state[allsubscriber::StateMemberY]);
+                robot_pose_.set_theta(robot_state[allsubscriber::StateMemberYaw]);
+                robot_twist_.mutable_linear()->set_x(robot_state[allsubscriber::StateMemberVx]);
+                robot_twist_.mutable_angular()->set_z(robot_state[allsubscriber::StateMemberGz]);
 
                 // local trajectory
-                std::vector<TrajPoint>().swap(local_optimal_trajectory_);
-                if(!trajectory_queue_.empty()){
-                    local_optimal_trajectory_ = trajectory_queue_.back();
-                }
-                
                 if(local_optimal_trajectory_.size() <= 1){
                     std::cout<<"get localpath empty"<<std::endl;
                     cmd_twist_.mutable_twist()->mutable_linear()->set_x(0.0);
@@ -818,7 +230,7 @@ namespace CB {
                     }
                 }
                 else{
-                    if(std::fabs(robot_state[StateMemberVx]) < 0.02 && fabs(robot_state[StateMemberGz]) < 0.02){
+                    if(std::fabs(robot_state[allsubscriber::StateMemberVx]) < 0.02 && fabs(robot_state[allsubscriber::StateMemberGz]) < 0.02){
                         stratagy_status_ &= ~0x80;
                     }
                     else{
@@ -831,7 +243,7 @@ namespace CB {
                     stratagy_status_ |= 0x40; // 上一控制周期控制器超时
                 }
                 else{
-                    if(std::fabs(robot_state[StateMemberVx]) < 0.02 && fabs(robot_state[StateMemberGz]) < 0.02){
+                    if(std::fabs(robot_state[allsubscriber::StateMemberVx]) < 0.02 && fabs(robot_state[allsubscriber::StateMemberGz]) < 0.02){
                         stratagy_status_ &= ~0x40;
                     }
                 }
@@ -971,7 +383,7 @@ namespace CB {
 
             /*--------------------------------controller state update-----------------------------------------*/
 
-            double t_now = toSec(this->now());
+            double t_now = common::toSec(this->now());
             
             if(target_traj_.empty()){
                 controller_run_status_ = CONTROL_FREE;
@@ -1007,7 +419,7 @@ namespace CB {
                         }
                     }
 
-                    if(std::fabs(robot_state[StateMemberVx]) < 0.005 && std::fabs(robot_state[StateMemberGz]) < 0.005 && controller_run_status_ == CONTROL_BUSY){
+                    if(std::fabs(robot_state[allsubscriber::StateMemberVx]) < 0.005 && std::fabs(robot_state[allsubscriber::StateMemberGz]) < 0.005 && controller_run_status_ == CONTROL_BUSY){
                         motor_timeout++;
                     }
                     else{
@@ -1048,11 +460,11 @@ namespace CB {
             }
             else if(controller_run_status_ == CONTROL_BUSY){
                 /*--------------------------------Get the Target Point-----------------------------------------*/
-                double t_delta_min = (robot_state[StateMemberVx] <= 1.01) ? t_delta_max_ : t_delta_min_; //  seconds;
+                double t_delta_min = (robot_state[allsubscriber::StateMemberVx] <= 1.01) ? t_delta_max_ : t_delta_min_; //  seconds;
                 double t_delta = t_delta_min;
-                target_t_ = toSec(this->now()) + t_delta;
+                target_t_ = common::toSec(this->now()) + t_delta;
                 mpc_controller_.findTargetTrajTimepoint(target_traj_point_, target_traj_, target_t_);
-                target_t_ = toSec(this->now()) + t_delta_min_;
+                target_t_ = common::toSec(this->now()) + t_delta_min_;
                 mpc_controller_.findTargetTrajTimepoint(target_traj_point2_, target_traj_, target_t_);
                 /*--------------------------------Control-----------------------------------------*/
                 if(!mpc_controller_.run_controller(
@@ -1105,68 +517,10 @@ namespace CB {
         }
     }
 
-    std::array<double, STATE_SIZE> RosController::getState() const{
-        return state_.load();
-    }
-
-    void RosController::setState(const std::array<double, STATE_SIZE> & state){
-        state_.store(state);
-    }
-
-    void RosController::pushQueueMeasurement(
-        const std::string & topic_name, 
-        const Eigen::MatrixXd & measurement,
-        const Eigen::MatrixXd & covariance,
-        const std::vector<bool> & update_mask,
-        const double mahalanobis_thresh,
-        const SysTimePoint & time
-    ){
-        MeasurementPtr meas = std::make_shared<Measurement>();
-        // std::cout << toSec(time) << std::endl;
-        meas->time_ = time;
-        meas->topic_name_ = topic_name;
-        meas->mahalanobis_thresh_ = mahalanobis_thresh;
-        meas->measurement_ = measurement;
-        meas->covariance_ = covariance;
-        meas->update_mask_ = update_mask;
-        measurement_queue_.push(meas);
-    }
-
-    void RosController::copyCovariance(
-        const double * covariance_in,
-        Eigen::MatrixXd & covariance_out,
-        const std::string & topic_name,
-        const std::vector<bool> & update_vector,
-        const size_t offset, const size_t dimension
-    ){
-        if(!covariance_in){
-            std::cout << topic_name << " covariance empty" << std::endl;
-        }
-        for(size_t i=0; i<dimension; ++i){
-            for(size_t j=0; j<dimension; ++j){
-                covariance_out(i, j) = covariance_in[dimension * i + j];
-
-            }
-        }
-    }
-
-    std::vector<bool> RosController::loadUpdateConfig(const std::string & topic_name){
-        std::vector<bool> update_vector(STATE_SIZE, 0);
-        const std::string topic_config_name = topic_name + "_config";
-        const YAML::Node& cfg_array = filter_config_yaml_[topic_config_name];
-        if(cfg_array.IsSequence() && cfg_array.size()==STATE_SIZE){
-            for(int i=0; i<STATE_SIZE; ++i){
-                update_vector[i] = cfg_array[i].as<bool>();
-            }
-        }
-        return update_vector;
-    }
-
     bool RosController::loadParamMatrix(
         const std::string & param_name, 
         std::vector<double> & q, 
-        std::vector<double> & r, 
-        std::vector<double> & f
+        std::vector<double> & r
     ){
         q.clear();
         r.clear();
@@ -1183,14 +537,6 @@ namespace CB {
         if(cfg_array.IsSequence()){
             for(int i=0; i<cfg_array.size(); ++i){
                 r.push_back(cfg_array[i].as<double>());
-            }
-        }
-
-        config_name = param_name + "_terminal_weight";
-        cfg_array = filter_config_yaml_[config_name];
-        if(cfg_array.IsSequence()){
-            for(int i=0; i<cfg_array.size(); ++i){
-                f.push_back(cfg_array[i].as<double>());
             }
         }
 

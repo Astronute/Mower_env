@@ -5,7 +5,8 @@
 
 #include "geometry_msgs/twist.pb.h"
 
-#include "measurement.h"
+#include "common.h"
+#include "all_subscriber.h"
 #include "yaml-cpp/yaml.h"
 
 #include <iostream>
@@ -14,6 +15,8 @@
 #include <unordered_map>
 
 namespace CB{
+
+	using namespace allsubscriber;
 	
     class ControllerBase{
 	public:

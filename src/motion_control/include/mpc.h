@@ -6,11 +6,13 @@
 
 #include "Eigen/Dense"
 #include "OsqpEigen/OsqpEigen.h"
-#include "measurement.h"
+#include "common.h"
+#include "all_subscriber.h"
 
 #include <vector>
 
 namespace CB{
+    using namespace allsubscriber;
 
     class MPC : public ControllerBase{
         public:
