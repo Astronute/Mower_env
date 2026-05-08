@@ -38,6 +38,10 @@ namespace common {
 
 	double toSec(const google::protobuf::Timestamp & stamp);
 
+	double toMillisec(const SysTimePoint & time);
+
+	double toMillisec(const std::chrono::system_clock::duration & duration);
+
 	template<typename T>
 	class fixedQueue{
 	public:

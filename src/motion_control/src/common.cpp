@@ -80,4 +80,12 @@ namespace common {
 		return static_cast<double>(stamp.seconds()) + nanosecToSec(stamp.nanos());
 	}
 
+	double toMillisec(const SysTimePoint & time){
+		return std::chrono::duration<double, std::milli>(time.time_since_epoch()).count();
+	}
+
+	double toMillisec(const std::chrono::system_clock::duration & duration){
+		return std::chrono::duration<double, std::milli>(duration).count();
+	}
+
 }
