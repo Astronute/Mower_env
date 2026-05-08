@@ -428,7 +428,6 @@ namespace CB {
                             else{
                                 controller_run_status_ = CONTROL_END;
                             }
-                            
                         }
                     }
 

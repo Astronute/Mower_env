@@ -4,6 +4,8 @@
 #include "Eigen/Dense"
 
 #include "geometry_msgs/twist.pb.h"
+#include "geometry_msgs/pose2d.pb.h"
+#include "geometry_msgs/twist.pb.h"
 
 #include "common.h"
 #include "all_subscriber.h"
@@ -40,6 +42,10 @@ namespace CB{
 
 		bool findTargetPathPoint(TrajPoint & target_point, const std::vector<TrajPoint> & target_traj, double target_s);
 
+		void planLinearTrajectory(std::vector<TrajPoint> & traj, const geometry_msgs::Pose2D & robot_pose, const geometry_msgs::Twist & robot_twist, const double line_s);
+
+		void fivetimesPlanTraj(std::array<double, 6> & coeff, double t0, double s0, double v0, double a0, double t1, double s1, double v1, double a1);
+
 		// virtual bool run_controller(
         //     const std::vector<double> & param_q,
         //     const std::vector<double> & param_r,
@@ -61,6 +67,10 @@ namespace CB{
 
 		bool is_initialized();
 
+		auto now() const {
+			return std::chrono::system_clock::now();
+		}
+
 	protected:
 	
 		bool initialized_;
@@ -78,6 +88,8 @@ namespace CB{
 		double max_vel_, min_vel_;
 
 		double max_w_, min_w_;
+
+		double max_a_;
 
 		double tau_w_;
 		
