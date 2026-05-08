@@ -38,6 +38,8 @@ namespace CB{
 
         bool findTargetTrajTimepoint(TrajPoint & target_point, const std::vector<TrajPoint> & target_traj, double target_t);
 
+		bool findTargetPathPoint(TrajPoint & target_point, const std::vector<TrajPoint> & target_traj, double target_s);
+
 		// virtual bool run_controller(
         //     const std::vector<double> & param_q,
         //     const std::vector<double> & param_r,
@@ -49,23 +51,15 @@ namespace CB{
         //     double & cmd_vel_w
         // ) = 0;
 
+		double linearEquation(double x1, double y1, double x2, double y2, double x);
+
+		double linearEquationAngle(double x1, double y1, double x2, double y2, double x);
+
 		double normalize_angle(double angle);
 
 		double get_control_rate();
 
 		bool is_initialized();
-
-		void printVector(const std::vector<double> & vec){
-			if (vec.empty()) {
-				std::cout << "empty param" << std::endl;
-				return;
-			}
-			for (size_t i = 0; i < vec.size(); ++i) {
-				std::cout << vec[i];
-				if (i != vec.size() - 1) std::cout << ", ";
-			}
-			std::cout << "\n" << std::endl;
-		}
 
 	protected:
 	

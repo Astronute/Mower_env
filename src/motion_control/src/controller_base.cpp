@@ -93,25 +93,6 @@ namespace CB{
     bool ControllerBase::findTargetTrajTimepoint(TrajPoint & target_point, const std::vector<TrajPoint> & target_traj, double target_t){
         double target_x, target_y, target_yaw, target_kappa, target_s, target_v, target_w;
 
-        auto linearEquation = [&](double x1, double y1, double x2, double y2, double x) -> double{
-            double dx = x2 - x1;
-            if(std::fabs(dx) < 1e-9){
-                return y1;
-            }
-
-            return (x - x1) * (y2 - y1) / dx + y1;
-        };
-
-        auto linearEquationAngle = [&](double x1, double y1, double x2, double y2, double x) -> double{
-            double dx = x2 - x1;
-            if(std::fabs(dx) < 1e-9){
-                return y1;
-            }
-
-            double angle = normalize_angle(y2 - y1);
-            return normalize_angle((x - x1) * angle / dx + y1);
-        };
-
         int target_idx = 0;
         bool searched = false;
         if(target_traj.size() > 1){
@@ -179,6 +160,98 @@ namespace CB{
         target_point.w = target_w;
 
         return true;
+    }
+
+    bool ControllerBase::findTargetPathPoint(
+        TrajPoint & target_point, 
+        const std::vector<TrajPoint> & target_traj, 
+        double target_s
+    ){
+        double target_x, target_y, target_yaw, target_kappa, target_t, target_v, target_w;
+        int target_index = 0;
+        bool searched = false;
+
+        if(target_traj.size() > 1){
+            for(int i=0; i<target_traj.size(); ++i){
+                if(target_s <= target_traj.at(i).path_point.s){
+                    target_index = i;
+                    searched = true;
+                    break;
+                }
+            }
+
+            if(target_index == 0){
+                if(searched){
+                    TrajPoint p(
+                        target_traj.at(0).path_point,
+                        target_traj.at(0).v,
+                        target_traj.at(0).w,
+                        target_traj.at(0).t
+                    );
+                    target_point = p;
+                }
+                else{
+                    TrajPoint p(
+                        target_traj.back().path_point,
+                        target_traj.back().v,
+                        target_traj.back().w,
+                        target_traj.back().t
+                    );
+                    target_point = p;
+                }
+                return true;
+            }
+
+            TrajPoint prev_point(
+                target_traj.at(target_index - 1).path_point,
+                target_traj.at(target_index - 1).v,
+                target_traj.at(target_index - 1).w,
+                target_traj.at(target_index - 1).t
+            );
+            TrajPoint next_point(
+                target_traj.at(target_index).path_point,
+                target_traj.at(target_index).v,
+                target_traj.at(target_index).w,
+                target_traj.at(target_index).t
+            );
+            target_x = linearEquation(prev_point.s, prev_point.path_point.x, next_point.s, next_point.path_point.x, target_s);
+            target_y = linearEquation(prev_point.s, prev_point.path_point.y, next_point.s, next_point.path_point.y, target_s);
+            target_yaw = linearEquationAngle(prev_point.s, prev_point.path_point.yaw, next_point.s, next_point.path_point.yaw, target_s);
+            target_kappa = linearEquation(prev_point.s, prev_point.path_point.kappa, next_point.s, next_point.path_point.kappa, target_s);
+            target_t = linearEquation(prev_point.s, prev_point.t, next_point.s, next_point.t, target_s);
+            target_v = linearEquation(prev_point.s, prev_point.v, next_point.s, next_point.v, target_s);
+            target_w = linearEquation(prev_point.s, prev_point.w, next_point.s, next_point.w, target_s);
+        }
+        else{
+            std::cout << "findTargetPathPoint: target_trajectory size < 1" << std::endl;
+            return false;
+        }
+
+        PathPoint tar_p(target_x, target_y, 0.0, target_yaw, target_kappa, target_s);
+        target_point.path_point = tar_p;
+        target_point.t = target_t;
+        target_point.v = target_v;
+        target_point.w = target_w;
+        return true;
+    }
+
+    double ControllerBase::linearEquation(double x1, double y1, double x2, double y2, double x){
+        double dx = x2 - x1;
+        if(std::fabs(dx) < 1e-9){
+            return y1;
+        }
+
+        return (x - x1) * (y2 - y1) / dx + y1;
+    }
+
+    double ControllerBase::linearEquationAngle(double x1, double y1, double x2, double y2, double x){
+        double dx = x2 - x1;
+        if(std::fabs(dx) < 1e-9){
+            return y1;
+        }
+
+        double angle = normalize_angle(y2 - y1);
+        return normalize_angle((x - x1) * angle / dx + y1);
     }
 
     double ControllerBase::normalize_angle(double angle){

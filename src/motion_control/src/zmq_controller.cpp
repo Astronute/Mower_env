@@ -59,7 +59,6 @@ namespace CB {
     }
 
     bool RosController::loadParams(const YAML::Node & yaml_cfg){
-
         filter_config_yaml_ = yaml_cfg;
 
         if(filter_config_yaml_["map_frame_id"]){
@@ -108,6 +107,20 @@ namespace CB {
         }
         else{
             std::cout << "missing param 't_delta_min'" << std::endl;
+            return false;
+        }
+        if(filter_config_yaml_["s_delta_max"]){
+            s_delta_max_ = filter_config_yaml_["s_delta_max"].as<double>();
+        }
+        else{
+            std::cout << "missing param 's_delta_max'" << std::endl;
+            return false;
+        }
+        if(filter_config_yaml_["s_delta_min"]){
+            s_delta_min_ = filter_config_yaml_["s_delta_min"].as<double>();
+        }
+        else{
+            std::cout << "missing param 's_delta_min'" << std::endl;
             return false;
         }
 
@@ -460,7 +473,7 @@ namespace CB {
             }
             else if(controller_run_status_ == CONTROL_BUSY){
                 /*--------------------------------Get the Target Point-----------------------------------------*/
-                double t_delta_min = (robot_state[allsubscriber::StateMemberVx] <= 1.01) ? t_delta_max_ : t_delta_min_; //  seconds;
+                double t_delta_min = (robot_state[allsubscriber::StateMemberVx] <= 1.01) ? t_delta_min_ : t_delta_max_; //  seconds;
                 double t_delta = t_delta_min;
                 target_t_ = common::toSec(this->now()) + t_delta;
                 mpc_controller_.findTargetTrajTimepoint(target_traj_point_, target_traj_, target_t_);

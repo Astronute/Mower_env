@@ -172,9 +172,9 @@ namespace CB{
 
 		FollowedTrajectory pick_followed_trajectory_;
 
-		double t_delta_max_;
+		double t_delta_max_, t_delta_min_;
 
-		double t_delta_min_;
+		double s_delta_max_, s_delta_min_;
 
 		unsigned char stratagy_status_, last_stratagy_status_;
 
