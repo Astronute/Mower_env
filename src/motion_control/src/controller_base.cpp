@@ -289,19 +289,21 @@ namespace CB{
         target_y = robot_pose.y();
         target_yaw = robot_pose.theta();
         double begin_t = common::toSec(this->now()) + 5 * delta_t;
-
+        double calc_t;
         for(int i=0; i<num_points; ++i){
             if(plan_t < acc_time){
                 plan_s = acc_coeff.at(0) + acc_coeff.at(1) * plan_t + acc_coeff.at(2) * pow(plan_t, 2) + acc_coeff.at(3) * pow(plan_t, 3) + acc_coeff.at(4) * pow(plan_t, 4) + acc_coeff.at(5) * pow(plan_t, 5);
                 plan_v = acc_coeff.at(1) + 2 * acc_coeff.at(2) * plan_t + 3 * acc_coeff.at(3) * pow(plan_t, 2) + 4 * acc_coeff.at(4) * pow(plan_t, 3) + 5 * acc_coeff.at(5) * pow(plan_t, 4);
             }
             else if(plan_t <= (acc_time + uni_time)){
-                plan_s = uni_coeff.at(0) + uni_coeff.at(1) * plan_t + uni_coeff.at(2) * pow(plan_t, 2) + uni_coeff.at(3) * pow(plan_t, 3) + uni_coeff.at(4) * pow(plan_t, 4) + uni_coeff.at(5) * pow(plan_t, 5);
-                plan_v = uni_coeff.at(1) + 2 * uni_coeff.at(2) * plan_t + 3 * uni_coeff.at(3) * pow(plan_t, 2) + 4 * uni_coeff.at(4) * pow(plan_t, 3) + 5 * uni_coeff.at(5) * pow(plan_t, 4);
+                calc_t = plan_t - acc_time;
+                plan_s = uni_coeff.at(0) + uni_coeff.at(1) * calc_t + uni_coeff.at(2) * pow(calc_t, 2) + uni_coeff.at(3) * pow(calc_t, 3) + uni_coeff.at(4) * pow(calc_t, 4) + uni_coeff.at(5) * pow(calc_t, 5);
+                plan_v = uni_coeff.at(1) + 2 * uni_coeff.at(2) * calc_t + 3 * uni_coeff.at(3) * pow(calc_t, 2) + 4 * uni_coeff.at(4) * pow(calc_t, 3) + 5 * uni_coeff.at(5) * pow(calc_t, 4);
             }
             else{
-                plan_s = dec_coeff.at(0) + dec_coeff.at(1) * plan_t + dec_coeff.at(2) * pow(plan_t, 2) + dec_coeff.at(3) * pow(plan_t, 3) + dec_coeff.at(4) * pow(plan_t, 4) + dec_coeff.at(5) * pow(plan_t, 5);
-                plan_v = dec_coeff.at(1) + 2 * dec_coeff.at(2) * plan_t + 3 * dec_coeff.at(3) * pow(plan_t, 2) + 4 * dec_coeff.at(4) * pow(plan_t, 3) + 5 * dec_coeff.at(5) * pow(plan_t, 4);
+                calc_t = plan_t - acc_time - uni_time;
+                plan_s = dec_coeff.at(0) + dec_coeff.at(1) * calc_t + dec_coeff.at(2) * pow(calc_t, 2) + dec_coeff.at(3) * pow(calc_t, 3) + dec_coeff.at(4) * pow(calc_t, 4) + dec_coeff.at(5) * pow(calc_t, 5);
+                plan_v = dec_coeff.at(1) + 2 * dec_coeff.at(2) * calc_t + 3 * dec_coeff.at(3) * pow(calc_t, 2) + 4 * dec_coeff.at(4) * pow(calc_t, 3) + 5 * dec_coeff.at(5) * pow(calc_t, 4);
             }
 
             target_x = plan_v * cos(target_yaw) * delta_t + target_x;

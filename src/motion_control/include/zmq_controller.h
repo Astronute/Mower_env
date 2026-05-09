@@ -83,6 +83,7 @@ namespace CB{
 			CONTROL_TIMEOUT
 		};
 
+		// 控制器外部命令模式 default: UNDEFINED_CMD
 		enum ControllerMode{
 			SLOWLY_STOP_CMD,
 			RE_START_CMD,
@@ -104,18 +105,24 @@ namespace CB{
 			NORMAL_MODE_STR,
 			EMERGENCY_BRAKING_STR,
 			SLOWLY_STOP_STR,
+
+			ONLY_ROTATE_STR,
 			TEST_STR,
+
 			TO_POINT_STR,
 			TO_POSE_STR,
+
 			GO_BACKWORD_STR,
 			GO_FORWARD_STR,
+
 			NO_MOTION_STR
 		};
 
-		std::string array_controller_stratagy_[9] = {
+		std::string array_controller_stratagy_[10] = {
 			"NORMAL_MODE_STR",
 			"EMERGENCY_BRAKING_STR",
 			"SLOWLY_STOP_STR",
+			"ONLY_ROTATE_STR",
 			"TEST_STR",
 			"TO_POINT_STR",
 			"TO_POSE_STR",
@@ -127,6 +134,7 @@ namespace CB{
 		enum FollowedTrajectory{
 			LOCAL_TRAJ,
 			EMERG_BRAKE_TRAJ,
+			TEST_TRAJ,
 			NO_TRAJ
 		};
 
@@ -176,7 +184,7 @@ namespace CB{
 
 		double s_delta_max_, s_delta_min_;
 
-		unsigned char stratagy_status_, last_stratagy_status_;
+		unsigned char stratagy_param_, last_stratagy_param_;
 
 		bool status_change_flag_;
 
