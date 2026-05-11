@@ -42,6 +42,14 @@ namespace common {
 
 	double toMillisec(const std::chrono::system_clock::duration & duration);
 
+	double linearEquation(double x1, double y1, double x2, double y2, double x);
+
+	double linearEquationAngle(double x1, double y1, double x2, double y2, double x);
+
+	double normalize_angle(double angle);
+
+	double shortest_angular_distance(double angle_from, double angle_to);
+
 	template<typename T>
 	class fixedQueue{
 	public:

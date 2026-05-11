@@ -7,12 +7,36 @@
 namespace CB {
     using namespace std::chrono_literals;
 
+	std::string array_controller_mode_[10] = {
+		"SLOWLY_STOP_CMD",
+		"RE_START_CMD",
+		"LINE_MOVE_CMD",
+		"SELF_ROTATE_CMD",
+		"CIRCLE_MOVE_CMD",
+		"TO_POINT_CMD",
+		"TO_POSE_CMD",
+		"BACKWARD_TO_POSE_CMD",
+		"FORWARD_TO_POSE_CMD",
+		"UNDEFINED_CMD"
+	};
+
+	std::string array_controller_stratagy_[10] = {
+		"NORMAL_MODE_STR",
+		"EMERGENCY_BRAKING_STR",
+		"SLOWLY_STOP_STR",
+		"ONLY_ROTATE_STR",
+		"TEST_STR",
+		"TO_POINT_STR",
+		"TO_POSE_STR",
+		"GO_BACKWORD_STR",
+		"GO_FORWARD_STR",
+		"NO_MOTION_STR"
+	};
+
     RosController::RosController(): 
-        controller_run_status_(CONTROL_FREE),
-        controller_run_mode_(UNDEFINED_CMD),
         running_(true)
     {
-
+        reset();
     }
 
     RosController::~RosController(){
@@ -25,7 +49,7 @@ namespace CB {
 
     void RosController::reset(){
         controller_run_status_ = ControllerRunStatus::CONTROL_FREE;
-        controller_run_mode_ = ControllerMode::UNDEFINED_CMD;
+        set_outstratagy(ControllerMode::UNDEFINED_CMD);
 
     }
 
@@ -155,7 +179,6 @@ namespace CB {
         }while(more_params);
 
         /*-------------------------------- zmq publisher-----------------------------------------*/
-
         if(filter_config_yaml_["zmq_pub_port"]){
             std::string port = filter_config_yaml_["zmq_pub_port"].as<std::string>();
             zmq_publisher_.initialize(port);
@@ -166,10 +189,38 @@ namespace CB {
             return false;
         }
 
+        /*-------------------------------- zmq server-----------------------------------------*/
+        if(filter_config_yaml_["zmq_server_port"]){
+            std::string port = filter_config_yaml_["zmq_server_port"].as<std::string>();
+            zmq_server_.initializeRequestHandler(port);
+            zmq_server_.setRequestHandler([this](const std::string& request) -> std::string {
+                return this->zmq_server_callback(request);
+            });
+            zmq_server_.startRequestHandler();
+            std::cout << "mission execute server bind to: " << port << std::endl;
+        }
+        else{
+            std::cout << "missing param 'zmq_server_port' " << std::endl;
+            return false;
+        }
+
         std::cout << "now: " << common::toSec(this->now()) << std::endl;
 
         std::cout << "param load success." << std::endl;
         return true;
+    }
+
+    void RosController::set_outstratagy(const ControllerMode& mode){
+        {
+            std::lock_guard<std::mutex> lock(out_stratagy_mtx_);
+            controller_run_mode_ = mode;
+        }
+        std::cout << "set_outstratagy set to: " << array_controller_mode_[mode] << std::endl;
+    }
+
+    ControllerMode RosController::get_outstratagy(){
+        std::lock_guard<std::mutex> lock(out_stratagy_mtx_);
+        return controller_run_mode_;
     }
 
     void RosController::periodicControl(){
@@ -185,12 +236,11 @@ namespace CB {
         double cmd_vel_w = 0.0;
         WallRate rate_control_(control_frequency_);
 
-        // for test
-        controller_run_mode_ = LINE_MOVE_CMD;
-
         while(running_){
 
             clock_t time_begin_cpu = clock();
+
+            ControllerMode controller_out_stratagy = get_outstratagy();
 
             last_stratagy_param_ = stratagy_param_;
 
@@ -250,7 +300,7 @@ namespace CB {
                     }
                 }
                 // 缓停置位
-                if(controller_run_status_ == CONTROL_TIMEOUT || controller_run_mode_ == SLOWLY_STOP_CMD){
+                if(controller_run_status_ == CONTROL_TIMEOUT || controller_out_stratagy == SLOWLY_STOP_CMD){
                     stratagy_param_ |= 0x40; // 上一控制周期控制器超时
                 }
                 else{
@@ -259,31 +309,31 @@ namespace CB {
                     }
                 }
                 // 测试模式置位
-                if(controller_run_mode_ == LINE_MOVE_CMD || controller_run_mode_ == SELF_ROTATE_CMD || controller_run_mode_ == CIRCLE_MOVE_CMD){
+                if(controller_out_stratagy == LINE_MOVE_CMD || controller_out_stratagy == SELF_ROTATE_CMD || controller_out_stratagy == CIRCLE_MOVE_CMD){
                     stratagy_param_ |= 0x20;
                 }
                 else{
                     stratagy_param_ &= ~0x20;
                 }
-                if(controller_run_mode_ == TO_POINT_CMD){
+                if(controller_out_stratagy == TO_POINT_CMD){
                     stratagy_param_ |= 0x10;
                 }
                 else{
                     stratagy_param_ &= ~0x10;
                 }
-                if(controller_run_mode_ == TO_POSE_CMD){
+                if(controller_out_stratagy == TO_POSE_CMD){
                     stratagy_param_ |= 0x08;
                 }
                 else{
                     stratagy_param_ &= ~0x08;
                 }
-                if(controller_run_mode_ == BACKWARD_TO_POSE_CMD || controller_run_mode_ == FORWARD_TO_POSE_CMD){
+                if(controller_out_stratagy == BACKWARD_TO_POSE_CMD || controller_out_stratagy == FORWARD_TO_POSE_CMD){
                     stratagy_param_ |= 0x04;
                 }
                 else{
                     stratagy_param_ &= ~0x04;
                 }
-                if(controller_run_mode_ == CIRCLE_MOVE_CMD){
+                if(controller_out_stratagy == CIRCLE_MOVE_CMD){
                     stratagy_param_ |= 0x02;
                 }
                 else{
@@ -330,10 +380,10 @@ namespace CB {
                     controller_stratagy_ = TO_POSE_STR;
                 }
                 else if(stratagy_param_ >> 2){
-                    if(controller_run_mode_ == BACKWARD_TO_POSE_CMD){
+                    if(controller_out_stratagy == BACKWARD_TO_POSE_CMD){
                         controller_stratagy_ = GO_BACKWORD_STR;
                     }
-                    if(controller_run_mode_ == FORWARD_TO_POSE_CMD){
+                    if(controller_out_stratagy == FORWARD_TO_POSE_CMD){
                         controller_stratagy_ = GO_FORWARD_STR;
                     }
                 }
@@ -396,13 +446,13 @@ namespace CB {
                     }
                     case TEST_TRAJ:
                     {
-                        if(controller_run_mode_ == LINE_MOVE_CMD){
+                        if(controller_out_stratagy == LINE_MOVE_CMD){
                             mpc_controller_.planLinearTrajectory(target_traj_, robot_pose_, robot_twist_, 1.5);
                         }
-                        else if(controller_run_mode_ == SELF_ROTATE_CMD){
+                        else if(controller_out_stratagy == SELF_ROTATE_CMD){
                             
                         }
-                        else if(controller_run_mode_ == CIRCLE_MOVE_CMD){
+                        else if(controller_out_stratagy == CIRCLE_MOVE_CMD){
                             
                         }
                         update_trajectory_flag = false;
@@ -506,7 +556,7 @@ namespace CB {
                 }
                 else{
                     controller_run_status_ = CONTROL_FREE;
-                    controller_run_mode_ = UNDEFINED_CMD;
+                    set_outstratagy(ControllerMode::UNDEFINED_CMD);
                     controller_stratagy_ = NO_MOTION_STR;
                     stratagy_param_ = 0x00;
                     update_trajectory_flag = true;
@@ -569,6 +619,53 @@ namespace CB {
 
             rate_control_.sleep();
         }
+    }
+
+    std::string RosController::zmq_server_callback(const std::string& request){
+        std::cout << "Received request: " << request << std::endl;
+
+        std::string response;
+        std::shared_ptr<pnc_msgs::MotionOutSignal> mode_ptr = std::make_shared<pnc_msgs::MotionOutSignal>();
+        if(mode_ptr->ParseFromArray(request.data(), request.size())){
+            switch(mode_ptr->id()){
+                case 0:
+                    set_outstratagy(ControllerMode::SLOWLY_STOP_CMD);
+                    break;
+                case 1:
+                    set_outstratagy(ControllerMode::RE_START_CMD);
+                    break;
+                case 2:
+                    set_outstratagy(ControllerMode::LINE_MOVE_CMD);
+                    break;
+                case 3:
+                    set_outstratagy(ControllerMode::SELF_ROTATE_CMD);
+                    break;
+                case 4:
+                    set_outstratagy(ControllerMode::CIRCLE_MOVE_CMD);
+                    break;
+                case 5:
+                    set_outstratagy(ControllerMode::TO_POINT_CMD);
+                    break;
+                case 6:
+                    set_outstratagy(ControllerMode::TO_POSE_CMD);
+                    break;
+                case 7:
+                    set_outstratagy(ControllerMode::BACKWARD_TO_POSE_CMD);
+                    break;
+                case 8:
+                    set_outstratagy(ControllerMode::FORWARD_TO_POSE_CMD);
+                    break;
+                case 9:
+                    set_outstratagy(ControllerMode::UNDEFINED_CMD);
+                    break;
+                default:
+                    std::cout << "Unknown command id: " << mode_ptr->id() << std::endl;
+                    break;
+            }
+        }
+        response = mode_ptr->name();
+        std::cout << "Sending response: " << response << std::endl;
+        return response;
     }
 
     bool RosController::loadParamMatrix(

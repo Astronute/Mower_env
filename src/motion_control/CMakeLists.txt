@@ -22,17 +22,28 @@ link_directories(${THIRD_PARTY}/osqp/lib)
 link_directories(${THIRD_PARTY}/osqp-eigen/lib)
 link_directories(${THIRD_PARTY}/yaml-cpp-master/lib)
 
-file(GLOB SRC_LIST_ 
-  ${PROJECT_SOURCE_DIR}/src/*.cpp 
-  ${PROJECT_SOURCE_DIR}/src/*.cc 
+file(GLOB PROTO_LIST_
   ${PROTO_DIR}/pnc_msgs/*.cc
   ${PROTO_DIR}/geometry_msgs/*.cc
   ${PROTO_DIR}/nav_msgs/*.cc
   ${PROTO_DIR}/std_msgs/*.cc
 )
 
+file(GLOB SRC_LIST_ 
+  ${PROJECT_SOURCE_DIR}/src/*.cpp 
+  ${PROJECT_SOURCE_DIR}/src/*.cc 
+)
+
 add_executable(motion_control 
     ${SRC_LIST_} 
+    ${PROTO_LIST_}
+)
+
+add_executable(request_control 
+    ${PROJECT_SOURCE_DIR}/src/test_code/request_control.cpp
+    ${PROJECT_SOURCE_DIR}/src/zmq_subscriber.cpp
+    ${PROJECT_SOURCE_DIR}/src/common.cpp
+    ${PROTO_LIST_}
 )
 
 set_target_properties(motion_control PROPERTIES
@@ -51,7 +62,18 @@ target_link_libraries(motion_control
   libyaml-cpp.a
 )
 
+target_link_libraries(request_control 
+  ${PROTOBUF_LIBRARIES}
+  libzmq.so
+)
+
+
 install(TARGETS
   motion_control
+  DESTINATION ${PROJECT_INSTALL_PREFIX}/../../../install/${PROJECT_NAME}
+)
+
+install(TARGETS
+  request_control
   DESTINATION ${PROJECT_INSTALL_PREFIX}/../../../install/${PROJECT_NAME}
 )

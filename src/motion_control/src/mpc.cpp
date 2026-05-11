@@ -73,7 +73,7 @@ namespace CB{
         // state error
         double ex = robot_pose.x() - target_point.path_point.x;
         double ey = robot_pose.y() - target_point.path_point.y;
-        double eyaw = normalize_angle(robot_pose.theta() - target_point.path_point.yaw);
+        double eyaw = common::normalize_angle(robot_pose.theta() - target_point.path_point.yaw);
         // current state
         double v = robot_twist.linear().x();
         
@@ -246,7 +246,7 @@ namespace CB{
         // state error
         double ex = robot_pose.x() - target_point.path_point.x;
         double ey = robot_pose.y() - target_point.path_point.y;
-        double eyaw = normalize_angle(robot_pose.theta() - target_point.path_point.yaw);
+        double eyaw = common::normalize_angle(robot_pose.theta() - target_point.path_point.yaw);
         double ev = robot_twist.linear().x() - target_point.v;
         double ew = robot_twist.angular().z() - target_point.w;
         // current state

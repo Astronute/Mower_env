@@ -3,7 +3,7 @@
 
 ZmqSubscriber::ZmqSubscriber() 
     : context_(1), 
-      req_socket_(context_, ZMQ_SUB),
+      req_socket_(context_, ZMQ_REQ),
       running_(false),
       initialized_(false),
       server_address_("tcp://localhost:5558") {
@@ -42,48 +42,48 @@ bool ZmqSubscriber::initialize(const std::vector<SubscriberConfig>& configs) {
     }
 }
 
-// bool ZmqSubscriber::initializeRequestClient(const std::string& server_address) {
-//     try {
-//         server_address_ = server_address;
-//         req_socket_.connect(server_address_);
-//         std::cout << "Request client connected to: " << server_address_ << std::endl;
-//         return true;
-//     } catch (const zmq::error_t& e) {
-//         std::cerr << "Request client connection failed: " << e.what() << std::endl;
-//         return false;
-//     }
-// }
+bool ZmqSubscriber::initializeRequestClient(const std::string& server_address) {
+    try {
+        server_address_ = server_address;
+        req_socket_.connect(server_address_);
+        std::cout << "Request client connected to: " << server_address_ << std::endl;
+        return true;
+    } catch (const zmq::error_t& e) {
+        std::cerr << "Request client connection failed: " << e.what() << std::endl;
+        return false;
+    }
+}
 
-// std::string ZmqSubscriber::sendRequest(const std::string& request, int timeout_ms) {
-//     try {
-//         // 设置超时 - 使用新的API
-//         req_socket_.set(zmq::sockopt::rcvtimeo, timeout_ms);
-//         req_socket_.set(zmq::sockopt::sndtimeo, timeout_ms);
+std::string ZmqSubscriber::sendRequest(const std::string& request, int timeout_ms) {
+    try {
+        // 设置超时 - 使用新的API
+        req_socket_.set(zmq::sockopt::rcvtimeo, timeout_ms);
+        req_socket_.set(zmq::sockopt::sndtimeo, timeout_ms);
         
-//         // 发送请求
-//         zmq::message_t req_msg(request.size());
-//         memcpy(req_msg.data(), request.data(), request.size());
-//         req_socket_.send(req_msg, zmq::send_flags::none);
+        // 发送请求
+        zmq::message_t req_msg(request.size());
+        memcpy(req_msg.data(), request.data(), request.size());
+        req_socket_.send(req_msg, zmq::send_flags::none);
         
-//         std::cout << "[Request Client] Sent request: " << request << std::endl;
+        std::cout << "[Request Client] Sent request: " << request << std::endl;
         
-//         // 接收回复
-//         zmq::message_t reply_msg;
-//         auto result = req_socket_.recv(reply_msg, zmq::recv_flags::none);
+        // 接收回复
+        zmq::message_t reply_msg;
+        auto result = req_socket_.recv(reply_msg, zmq::recv_flags::none);
         
-//         if (result.has_value() && result.value() > 0) {
-//             std::string reply_str(static_cast<char*>(reply_msg.data()), reply_msg.size());
-//             std::cout << "[Request Client] Received reply: " << reply_str << std::endl;
-//             return reply_str;
-//         } else {
-//             std::cerr << "[Request Client] Request timeout or error" << std::endl;
-//             return "";
-//         }
-//     } catch (const zmq::error_t& e) {
-//         std::cerr << "Request failed: " << e.what() << std::endl;
-//         return "";
-//     }
-// }
+        if (result.has_value() && result.value() > 0) {
+            std::string reply_str(static_cast<char*>(reply_msg.data()), reply_msg.size());
+            std::cout << "[Request Client] Received reply: " << reply_str << std::endl;
+            return reply_str;
+        } else {
+            std::cerr << "[Request Client] Request timeout or error" << std::endl;
+            return "";
+        }
+    } catch (const zmq::error_t& e) {
+        std::cerr << "Request failed: " << e.what() << std::endl;
+        return "";
+    }
+}
 
 void ZmqSubscriber::start() {
     if (!initialized_) {

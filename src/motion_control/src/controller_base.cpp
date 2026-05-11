@@ -2,8 +2,6 @@
 
 namespace CB{
 
-    const double PI = 3.141592653589793;
-
     bool ControllerBase::initialize(){
 
         if(!loadParams()){
@@ -149,13 +147,13 @@ namespace CB{
                     target_traj.at(target_idx).w,
                     target_traj.at(target_idx).t
                 );
-                target_x = linearEquation(prev_point.t, prev_point.path_point.x, next_point.t, next_point.path_point.x, target_t);
-                target_y = linearEquation(prev_point.t, prev_point.path_point.y, next_point.t, next_point.path_point.y, target_t);
-                target_yaw = linearEquationAngle(prev_point.t, prev_point.path_point.yaw, next_point.t, next_point.path_point.yaw, target_t);
-                target_kappa = linearEquation(prev_point.t, prev_point.path_point.kappa, next_point.t, next_point.path_point.kappa, target_t);
-                target_s = linearEquation(prev_point.t, prev_point.path_point.s, next_point.t, next_point.path_point.s, target_t);
-                target_v = linearEquation(prev_point.t, prev_point.v, next_point.t, next_point.v, target_t);
-                target_w = linearEquation(prev_point.t, prev_point.w, next_point.t, next_point.w, target_t);
+                target_x = common::linearEquation(prev_point.t, prev_point.path_point.x, next_point.t, next_point.path_point.x, target_t);
+                target_y = common::linearEquation(prev_point.t, prev_point.path_point.y, next_point.t, next_point.path_point.y, target_t);
+                target_yaw = common::linearEquationAngle(prev_point.t, prev_point.path_point.yaw, next_point.t, next_point.path_point.yaw, target_t);
+                target_kappa = common::linearEquation(prev_point.t, prev_point.path_point.kappa, next_point.t, next_point.path_point.kappa, target_t);
+                target_s = common::linearEquation(prev_point.t, prev_point.path_point.s, next_point.t, next_point.path_point.s, target_t);
+                target_v = common::linearEquation(prev_point.t, prev_point.v, next_point.t, next_point.v, target_t);
+                target_w = common::linearEquation(prev_point.t, prev_point.w, next_point.t, next_point.w, target_t);
 
             }
         }
@@ -225,13 +223,13 @@ namespace CB{
                 target_traj.at(target_index).w,
                 target_traj.at(target_index).t
             );
-            target_x = linearEquation(prev_point.path_point.s, prev_point.path_point.x, next_point.path_point.s, next_point.path_point.x, target_s);
-            target_y = linearEquation(prev_point.path_point.s, prev_point.path_point.y, next_point.path_point.s, next_point.path_point.y, target_s);
-            target_yaw = linearEquationAngle(prev_point.path_point.s, prev_point.path_point.yaw, next_point.path_point.s, next_point.path_point.yaw, target_s);
-            target_kappa = linearEquation(prev_point.path_point.s, prev_point.path_point.kappa, next_point.path_point.s, next_point.path_point.kappa, target_s);
-            target_t = linearEquation(prev_point.path_point.s, prev_point.t, next_point.path_point.s, next_point.t, target_s);
-            target_v = linearEquation(prev_point.path_point.s, prev_point.v, next_point.path_point.s, next_point.v, target_s);
-            target_w = linearEquation(prev_point.path_point.s, prev_point.w, next_point.path_point.s, next_point.w, target_s);
+            target_x = common::linearEquation(prev_point.path_point.s, prev_point.path_point.x, next_point.path_point.s, next_point.path_point.x, target_s);
+            target_y = common::linearEquation(prev_point.path_point.s, prev_point.path_point.y, next_point.path_point.s, next_point.path_point.y, target_s);
+            target_yaw = common::linearEquationAngle(prev_point.path_point.s, prev_point.path_point.yaw, next_point.path_point.s, next_point.path_point.yaw, target_s);
+            target_kappa = common::linearEquation(prev_point.path_point.s, prev_point.path_point.kappa, next_point.path_point.s, next_point.path_point.kappa, target_s);
+            target_t = common::linearEquation(prev_point.path_point.s, prev_point.t, next_point.path_point.s, next_point.t, target_s);
+            target_v = common::linearEquation(prev_point.path_point.s, prev_point.v, next_point.path_point.s, next_point.v, target_s);
+            target_w = common::linearEquation(prev_point.path_point.s, prev_point.w, next_point.path_point.s, next_point.w, target_s);
         }
         else{
             std::cout << "findTargetPathPoint: target_trajectory size < 1" << std::endl;
@@ -246,6 +244,7 @@ namespace CB{
         return true;
     }
 
+    // 规划当前朝向的固定长度直线轨迹
     void ControllerBase::planLinearTrajectory(
         std::vector<TrajPoint> & traj, 
         const geometry_msgs::Pose2D & robot_pose, 
@@ -310,7 +309,7 @@ namespace CB{
             target_y = plan_v * sin(target_yaw) * delta_t + target_y;
             target_v = plan_v;
             target_w = 0.0;
-            target_yaw = normalize_angle(target_yaw + target_w * delta_t);
+            target_yaw = common::normalize_angle(target_yaw + target_w * delta_t);
             target_kappa = (plan_v != 0) ? target_w / plan_v : 0.0;
             target_t = begin_t + plan_t;
 
@@ -323,6 +322,8 @@ namespace CB{
             plan_t += delta_t;
         }
         /*--------------end-------------------*/
+        target_point.v = 0.0;
+        target_point.w = 0.0;
         for(int i=0; i<20; ++i){
             target_t = begin_t + plan_t;
             target_point.t = target_t;
@@ -330,6 +331,93 @@ namespace CB{
             plan_t += delta_t;
         }
 
+    }
+
+    // 规划到目标点的轨迹(忽略目标点朝向)
+    void ControllerBase::planLinearToGoalPoseTrajectory(
+        std::vector<TrajPoint> & traj, 
+        const geometry_msgs::Pose2D & robot_pose, 
+        const geometry_msgs::Twist & robot_twist, 
+        const geometry_msgs::Pose2D & goal_pose
+    ){
+
+        double line_s = hypot(goal_pose.x() - robot_pose.x(), goal_pose.y() - robot_pose.y());
+        double line_yaw = atan2(goal_pose.y() - robot_pose.y(), goal_pose.x() - robot_pose.x());
+
+        double line_vertical_s = line_s;
+        double line_max_v = max_vel_ * 0.5;
+        double line_max_a = max_a_;
+        // 加速段（缓慢加速）
+        double acc_time = 2.0 * line_max_v / line_max_a;
+        double acc_dis = 0.5 * line_max_v * acc_time;
+        // 减速段（快速减速）
+        double dec_time = acc_time / 2.0;
+        double dec_dis = acc_dis / 2.0;
+        // 匀速段
+        double uni_dis = line_vertical_s - acc_dis - dec_dis;
+        double uni_time = uni_dis / line_max_v;
+        if(uni_dis < 0){
+            acc_time = 2.0 * std::sqrt(2.0 / 3.0 * line_vertical_s / line_max_a);
+            acc_dis = line_vertical_s * 2.0 / 3.0;
+            uni_time = 0.0;
+            uni_dis = 0.0;
+            dec_time = acc_time / 2.0;
+            dec_dis = acc_dis / 2.0;
+        }
+        double plan_total_time = acc_time + uni_time + dec_time;
+        
+        TrajPoint target_point;
+        double delta_t = 1.0 / control_rate_;
+        unsigned int num_points = plan_total_time / delta_t;
+        double begin_t = common::toSec(this->now()) + 5 * delta_t;
+        double plan_t = 0.0;
+        double plan_s = 0.0;
+        double plan_v;
+        double plan_v_peak = acc_time * line_max_a / 2.0;
+        double target_x, target_y, target_yaw, target_kappa, target_s, target_t, target_v, target_w;
+        target_x = robot_pose.x();
+        target_y = robot_pose.y();
+        target_yaw = line_yaw;
+        
+        for(int i=0; i<num_points; ++i){
+            if(plan_t < acc_time){
+                plan_v = line_max_a / 2.0 * plan_t;
+            }
+            else if(plan_t < (acc_time + uni_time)){
+                plan_v = line_max_v;
+            }
+            else if(plan_t < plan_total_time){
+                plan_v = plan_v_peak - line_max_a * (plan_t - acc_time - uni_time);
+            }
+
+            plan_s += plan_v * delta_t;
+
+            target_x += plan_v * cos(line_yaw) * delta_t;
+            target_y += plan_v * sin(line_yaw) * delta_t;
+            target_yaw = line_yaw;
+            target_kappa = 0.0;
+            target_s = plan_s;
+            target_t = begin_t + plan_t;
+            target_v = plan_v;
+            target_w = 0.0;
+
+            target_point.path_point = PathPoint(target_x, target_y, 0.0, target_yaw, target_kappa, target_s);
+            target_point.t = target_t;
+            target_point.v = target_v;
+            target_point.w = target_w;
+            traj.push_back(target_point);
+
+            plan_t += delta_t;
+        }
+        /*--------------end-------------------*/
+        target_point.v = 0.0;
+        target_point.w = 0.0;
+        for(int i=0; i<20; ++i){
+            target_t = begin_t + plan_t;
+            target_point.t = target_t;
+            traj.push_back(target_point);
+            plan_t += delta_t;
+        }
     }
 
     void ControllerBase::fivetimesPlanTraj(
@@ -345,37 +433,6 @@ namespace CB{
         coeff.at(3) = 1 / (2 * pow(dt, 3)) * (20 * ds - (8 * v1 + 12 * v0) * dt - (3 * a0 - a1) * pow(dt, 2));
         coeff.at(4) = 1 / (2 * pow(dt, 4)) * (-30 * ds + (14 * v1 + 16 * v0) * dt + (3 * a0 - 2 * a1) * pow(dt, 2));
         coeff.at(5) = 1 / (2 * pow(dt, 5)) * (12 * ds - 6 * (v1 + v0) * dt + (a1 - a0) * pow(dt, 2));
-    }
-
-    double ControllerBase::linearEquation(double x1, double y1, double x2, double y2, double x){
-        double dx = x2 - x1;
-        if(std::fabs(dx) < 1e-9){
-            return y1;
-        }
-
-        return (x - x1) * (y2 - y1) / dx + y1;
-    }
-
-    double ControllerBase::linearEquationAngle(double x1, double y1, double x2, double y2, double x){
-        double dx = x2 - x1;
-        if(std::fabs(dx) < 1e-9){
-            return y1;
-        }
-
-        double angle = normalize_angle(y2 - y1);
-        return normalize_angle((x - x1) * angle / dx + y1);
-    }
-
-    double ControllerBase::normalize_angle(double angle){
-        double TWO_PI = 2.0 * PI;
-        angle = std::fmod(angle, TWO_PI);
-        if(angle > PI){
-            angle = angle - TWO_PI;
-        }
-        else if(angle <= -PI){
-            angle = angle + TWO_PI;
-        }
-        return angle;
     }
 
     double ControllerBase::get_control_rate(){

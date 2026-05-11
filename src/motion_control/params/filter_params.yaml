@@ -27,6 +27,9 @@ local_path_timeout: 1.0
 # 控制信号发布端口
 zmq_pub_port: tcp://*:5557
 
+# 控制器服务端口
+zmq_server_port: tcp://*:5588
+
 # 消息订阅端口
 zmq_sub_port0: tcp://127.0.0.1:5556
 

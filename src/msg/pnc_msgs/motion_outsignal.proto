@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package pnc_msgs;
+
+import "std_msgs/header.proto";
+
+message MotionOutSignal{
+    std_msgs.Header header = 1;
+
+    int32 id = 2;
+
+    string name = 3;
+
+    double rsv_0 = 4;
+
+    double rsv_1 = 5;
+
+    double rsv_2 = 6;
+
+    double rsv_3 = 7;
+
+    double rsv_4 = 8;
+
+    double rsv_5 = 9;
+
+    double rsv_6 = 10;
+
+    double rsv_7 = 11;
+}

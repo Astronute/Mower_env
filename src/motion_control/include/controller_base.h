@@ -44,6 +44,8 @@ namespace CB{
 
 		void planLinearTrajectory(std::vector<TrajPoint> & traj, const geometry_msgs::Pose2D & robot_pose, const geometry_msgs::Twist & robot_twist, const double line_s);
 
+		void planLinearToGoalPoseTrajectory(std::vector<TrajPoint> & traj, const geometry_msgs::Pose2D & robot_pose, const geometry_msgs::Twist & robot_twist, const geometry_msgs::Pose2D & goal_pose);
+
 		void fivetimesPlanTraj(std::array<double, 6> & coeff, double t0, double s0, double v0, double a0, double t1, double s1, double v1, double a1);
 
 		// virtual bool run_controller(
@@ -56,12 +58,6 @@ namespace CB{
         //     double & cmd_vel_v, 
         //     double & cmd_vel_w
         // ) = 0;
-
-		double linearEquation(double x1, double y1, double x2, double y2, double x);
-
-		double linearEquationAngle(double x1, double y1, double x2, double y2, double x);
-
-		double normalize_angle(double angle);
 
 		double get_control_rate();
 

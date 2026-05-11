@@ -32,8 +32,8 @@ public:
     void setMessageCallback(MessageCallback callback);
     
     // 请求-回复模式方法
-    // bool initializeRequestClient(const std::string& server_address = "tcp://localhost:5558");
-    // std::string sendRequest(const std::string& request, int timeout_ms = 5000);
+    bool initializeRequestClient(const std::string& server_address = "tcp://localhost:5558");
+    std::string sendRequest(const std::string& request, int timeout_ms = 5000);
     
     void shutdown();
 

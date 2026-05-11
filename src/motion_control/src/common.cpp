@@ -1,5 +1,7 @@
 #include "common.h"
 
+const double PI = 3.141592653589793;
+
 namespace common {
 
 	void quatToRPY(const geometry_msgs::Quaternion & quat, double & roll, double & pitch, double & yaw){
@@ -34,6 +36,50 @@ namespace common {
 		quat.set_y(sy * cp * sr + cy * sp * cr);
 		quat.set_z(sy * cp * cr - cy * sp * sr);
 	}
+
+    // 线性插值
+    double linearEquation(double x1, double y1, double x2, double y2, double x){
+        double dx = x2 - x1;
+        if(std::fabs(dx) < 1e-9){
+            return y1;
+        }
+
+        return (x - x1) * (y2 - y1) / dx + y1;
+    }
+
+    // 角度线性插值
+    double linearEquationAngle(double x1, double y1, double x2, double y2, double x){
+        double dx = x2 - x1;
+        if(std::fabs(dx) < 1e-9){
+            return y1;
+        }
+
+        double angle = normalize_angle(y2 - y1);
+        return normalize_angle((x - x1) * angle / dx + y1);
+    }
+
+    double normalize_angle(double angle){
+        double TWO_PI = 2.0 * PI;
+        angle = std::fmod(angle, TWO_PI);
+        if(angle > PI){
+            angle = angle - TWO_PI;
+        }
+        else if(angle <= -PI){
+            angle = angle + TWO_PI;
+        }
+        return angle;
+    }
+
+    double shortest_angular_distance(double angle_from, double angle_to) {
+        double diff = angle_to - angle_from;
+        if (diff > PI) {
+            diff -= 2 * PI;
+        }
+        else if (diff < -1.0 * PI) {
+            diff += 2 * PI;
+        }
+        return diff;
+    }
 
 	void printVector(const std::vector<double> & vec){
 		if (vec.empty()) {

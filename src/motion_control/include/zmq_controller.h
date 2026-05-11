@@ -11,6 +11,7 @@
 #include "geometry_msgs/twist.pb.h"
 #include "pnc_msgs/point_vec.pb.h"
 #include "pnc_msgs/planning_trajectory.pb.h"
+#include "pnc_msgs/motion_outsignal.pb.h"
 #include "zmq_subscriber.h"
 #include "zmq_publisher.h"
 // #ifdef USE_SIM
@@ -44,6 +45,59 @@ namespace CB{
 	const double PI = 3.141592653589793;
 	const double TAU = 6.283185307179587;
 
+	enum ControllerRunStatus{
+		CONTROL_FREE,
+		CONTROL_BUSY,
+		CONTROL_ERROR,
+		CONTROL_END,
+		CONTROL_TIMEOUT
+	};
+
+	// 控制器外部命令模式 default: UNDEFINED_CMD
+	enum ControllerMode{
+		SLOWLY_STOP_CMD,
+		RE_START_CMD,
+
+		LINE_MOVE_CMD,
+		SELF_ROTATE_CMD,
+		CIRCLE_MOVE_CMD,
+
+		TO_POINT_CMD,
+		TO_POSE_CMD,
+
+		BACKWARD_TO_POSE_CMD,
+		FORWARD_TO_POSE_CMD,
+
+		UNDEFINED_CMD
+	};
+
+	enum ControllerStratagy{
+		NORMAL_MODE_STR,
+		EMERGENCY_BRAKING_STR,
+		SLOWLY_STOP_STR,
+
+		ONLY_ROTATE_STR,
+		TEST_STR,
+
+		TO_POINT_STR,
+		TO_POSE_STR,
+
+		GO_BACKWORD_STR,
+		GO_FORWARD_STR,
+
+		NO_MOTION_STR
+	};
+
+	enum FollowedTrajectory{
+		LOCAL_TRAJ,
+		EMERG_BRAKE_TRAJ,
+		TEST_TRAJ,
+		NO_TRAJ
+	};
+
+	extern std::string array_controller_mode_[10];
+	extern std::string array_controller_stratagy_[10];
+
     class RosController{
     public:
         explicit RosController();
@@ -57,6 +111,12 @@ namespace CB{
 		void spin();
 
         bool loadParams(const YAML::Node & yaml_cfg);
+
+		void set_outstratagy(const ControllerMode& mode);
+
+		ControllerMode get_outstratagy();
+
+		std::string zmq_server_callback(const std::string& request);
 
         void setPtr(std::shared_ptr<allsubscriber::AllSubscriber> _all_subscriber){
             this->all_subscriber_ = _all_subscriber;
@@ -75,68 +135,6 @@ namespace CB{
 		}
 
     private:
-		enum ControllerRunStatus{
-			CONTROL_FREE,
-			CONTROL_BUSY,
-			CONTROL_ERROR,
-			CONTROL_END,
-			CONTROL_TIMEOUT
-		};
-
-		// 控制器外部命令模式 default: UNDEFINED_CMD
-		enum ControllerMode{
-			SLOWLY_STOP_CMD,
-			RE_START_CMD,
-
-			LINE_MOVE_CMD,
-			SELF_ROTATE_CMD,
-			CIRCLE_MOVE_CMD,
-
-			TO_POINT_CMD,
-			TO_POSE_CMD,
-
-			BACKWARD_TO_POSE_CMD,
-			FORWARD_TO_POSE_CMD,
-
-			UNDEFINED_CMD
-		};
-
-		enum ControllerStratagy{
-			NORMAL_MODE_STR,
-			EMERGENCY_BRAKING_STR,
-			SLOWLY_STOP_STR,
-
-			ONLY_ROTATE_STR,
-			TEST_STR,
-
-			TO_POINT_STR,
-			TO_POSE_STR,
-
-			GO_BACKWORD_STR,
-			GO_FORWARD_STR,
-
-			NO_MOTION_STR
-		};
-
-		std::string array_controller_stratagy_[10] = {
-			"NORMAL_MODE_STR",
-			"EMERGENCY_BRAKING_STR",
-			"SLOWLY_STOP_STR",
-			"ONLY_ROTATE_STR",
-			"TEST_STR",
-			"TO_POINT_STR",
-			"TO_POSE_STR",
-			"GO_BACKWORD_STR",
-			"GO_FORWARD_STR",
-			"NO_MOTION_STR"
-		};
-
-		enum FollowedTrajectory{
-			LOCAL_TRAJ,
-			EMERG_BRAKE_TRAJ,
-			TEST_TRAJ,
-			NO_TRAJ
-		};
 
 		YAML::Node filter_config_yaml_;
 
@@ -148,13 +146,15 @@ namespace CB{
 
 		std::mutex mtx_;
 
+		std::mutex out_stratagy_mtx_;
+
 		MPC mpc_controller_;
 
 		std::shared_ptr<allsubscriber::AllSubscriber> all_subscriber_;
 
 		ZmqSubscriber zmq_subscriber_;
 
-		ZmqPublisher zmq_publisher_;
+		ZmqPublisher zmq_publisher_, zmq_server_;
 
 		std::unordered_map<std::string, std::vector<double>> matrix_params_q_;
 
