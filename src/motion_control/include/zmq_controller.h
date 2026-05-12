@@ -56,35 +56,26 @@ namespace CB{
 	// 控制器外部命令模式 default: UNDEFINED_CMD
 	enum ControllerMode{
 		SLOWLY_STOP_CMD,
+
 		RE_START_CMD,
 
 		LINE_MOVE_CMD,
 		SELF_ROTATE_CMD,
 		CIRCLE_MOVE_CMD,
 
-		TO_POINT_CMD,
-		TO_POSE_CMD,
-
-		BACKWARD_TO_POSE_CMD,
 		FORWARD_TO_POSE_CMD,
+		BACKWARD_TO_POSE_CMD,
 
 		UNDEFINED_CMD
 	};
 
 	enum ControllerStratagy{
-		NORMAL_MODE_STR,
 		EMERGENCY_BRAKING_STR,
 		SLOWLY_STOP_STR,
-
-		ONLY_ROTATE_STR,
 		TEST_STR,
-
-		TO_POINT_STR,
-		TO_POSE_STR,
-
-		GO_BACKWORD_STR,
-		GO_FORWARD_STR,
-
+		FORWARD_TO_POSE_STR,
+		BACKWARD_TO_POSE_STR,
+		NORMAL_MODE_STR,
 		NO_MOTION_STR
 	};
 
@@ -92,11 +83,19 @@ namespace CB{
 		LOCAL_TRAJ,
 		EMERG_BRAKE_TRAJ,
 		TEST_TRAJ,
+		FORWARD_TO_GOAL_TRAJ,
+		BACKWARD_TO_GOAL_TRAJ,
 		NO_TRAJ
 	};
 
-	extern std::string array_controller_mode_[10];
-	extern std::string array_controller_stratagy_[10];
+	extern std::string array_controller_status_[5];
+	extern std::string array_controller_mode_[8];
+	extern std::string array_controller_stratagy_[7];
+
+	struct OutStratagyInfo{
+		ControllerMode out_stratagy;
+		pnc_msgs::MotionOutSignal data;
+	};
 
     class RosController{
     public:
@@ -114,7 +113,7 @@ namespace CB{
 
 		void set_outstratagy(const ControllerMode& mode);
 
-		ControllerMode get_outstratagy();
+		OutStratagyInfo get_outStratagyInfo();
 
 		std::string zmq_server_callback(const std::string& request);
 
@@ -172,9 +171,11 @@ namespace CB{
 
 		std::vector<TrajPoint> local_optimal_trajectory_; // 当前局部轨迹
 
+		geometry_msgs::Pose2D out_goal_pose_;
+
 		ControllerRunStatus controller_run_status_;
 
-		ControllerMode controller_run_mode_;
+		OutStratagyInfo controller_out_stratagy_;
 
 		ControllerStratagy controller_stratagy_;
 

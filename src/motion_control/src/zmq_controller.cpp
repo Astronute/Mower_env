@@ -7,29 +7,32 @@
 namespace CB {
     using namespace std::chrono_literals;
 
-	std::string array_controller_mode_[10] = {
+    std::string array_controller_status_[5] = {
+		"CONTROL_FREE",
+		"CONTROL_BUSY",
+		"CONTROL_ERROR",
+		"CONTROL_END",
+		"CONTROL_TIMEOUT"
+    };
+
+	std::string array_controller_mode_[8] = {
 		"SLOWLY_STOP_CMD",
 		"RE_START_CMD",
 		"LINE_MOVE_CMD",
 		"SELF_ROTATE_CMD",
 		"CIRCLE_MOVE_CMD",
-		"TO_POINT_CMD",
-		"TO_POSE_CMD",
-		"BACKWARD_TO_POSE_CMD",
 		"FORWARD_TO_POSE_CMD",
+		"BACKWARD_TO_POSE_CMD",
 		"UNDEFINED_CMD"
 	};
 
-	std::string array_controller_stratagy_[10] = {
-		"NORMAL_MODE_STR",
+	std::string array_controller_stratagy_[7] = {
 		"EMERGENCY_BRAKING_STR",
 		"SLOWLY_STOP_STR",
-		"ONLY_ROTATE_STR",
 		"TEST_STR",
-		"TO_POINT_STR",
-		"TO_POSE_STR",
-		"GO_BACKWORD_STR",
-		"GO_FORWARD_STR",
+		"FORWARD_TO_POSE_STR",
+		"BACKWARD_TO_POSE_STR",
+		"NORMAL_MODE_STR",
 		"NO_MOTION_STR"
 	};
 
@@ -213,14 +216,14 @@ namespace CB {
     void RosController::set_outstratagy(const ControllerMode& mode){
         {
             std::lock_guard<std::mutex> lock(out_stratagy_mtx_);
-            controller_run_mode_ = mode;
+            controller_out_stratagy_.out_stratagy = mode;
         }
         std::cout << "set_outstratagy set to: " << array_controller_mode_[mode] << std::endl;
     }
 
-    ControllerMode RosController::get_outstratagy(){
+    OutStratagyInfo RosController::get_outStratagyInfo(){
         std::lock_guard<std::mutex> lock(out_stratagy_mtx_);
-        return controller_run_mode_;
+        return controller_out_stratagy_;
     }
 
     void RosController::periodicControl(){
@@ -236,17 +239,17 @@ namespace CB {
         double cmd_vel_w = 0.0;
         WallRate rate_control_(control_frequency_);
 
+
         while(running_){
 
             clock_t time_begin_cpu = clock();
 
-            ControllerMode controller_out_stratagy = get_outstratagy();
+            ControllerMode out_stratagy = get_outStratagyInfo().out_stratagy;
 
             last_stratagy_param_ = stratagy_param_;
 
             /*--------------------------------get robot state-----------------------------------------*/
-
-            // check sensor data
+            /*--------------------------------update stratagy param-----------------------------------------*/
             std::array<double, allsubscriber::STATE_SIZE> robot_state;
             std::vector<allsubscriber::TrajPoint>().swap(local_optimal_trajectory_);
             bool sensor_valid = all_subscriber_->getState(robot_state);
@@ -275,8 +278,6 @@ namespace CB {
                 // local trajectory
                 std::vector<allsubscriber::TrajPoint>().swap(local_optimal_trajectory_);
                 bool local_path_valid = all_subscriber_->getLocalTrajectory(local_optimal_trajectory_);
-
-                /*--------------------------------update stratagy param-----------------------------------------*/
                 /*
                     8: Emergency Braking Flag
                     7: Stop Flag due to new goal router got
@@ -300,7 +301,7 @@ namespace CB {
                     }
                 }
                 // 缓停置位
-                if(controller_run_status_ == CONTROL_TIMEOUT || controller_out_stratagy == SLOWLY_STOP_CMD){
+                if(controller_run_status_ == CONTROL_TIMEOUT || out_stratagy == SLOWLY_STOP_CMD){
                     stratagy_param_ |= 0x40; // 上一控制周期控制器超时
                 }
                 else{
@@ -309,35 +310,17 @@ namespace CB {
                     }
                 }
                 // 测试模式置位
-                if(controller_out_stratagy == LINE_MOVE_CMD || controller_out_stratagy == SELF_ROTATE_CMD || controller_out_stratagy == CIRCLE_MOVE_CMD){
+                if(out_stratagy == LINE_MOVE_CMD || out_stratagy == SELF_ROTATE_CMD || out_stratagy == CIRCLE_MOVE_CMD){
                     stratagy_param_ |= 0x20;
                 }
                 else{
                     stratagy_param_ &= ~0x20;
                 }
-                if(controller_out_stratagy == TO_POINT_CMD){
+                if(out_stratagy == BACKWARD_TO_POSE_CMD || out_stratagy == FORWARD_TO_POSE_CMD){
                     stratagy_param_ |= 0x10;
                 }
                 else{
                     stratagy_param_ &= ~0x10;
-                }
-                if(controller_out_stratagy == TO_POSE_CMD){
-                    stratagy_param_ |= 0x08;
-                }
-                else{
-                    stratagy_param_ &= ~0x08;
-                }
-                if(controller_out_stratagy == BACKWARD_TO_POSE_CMD || controller_out_stratagy == FORWARD_TO_POSE_CMD){
-                    stratagy_param_ |= 0x04;
-                }
-                else{
-                    stratagy_param_ &= ~0x04;
-                }
-                if(controller_out_stratagy == CIRCLE_MOVE_CMD){
-                    stratagy_param_ |= 0x02;
-                }
-                else{
-                    stratagy_param_ &= ~0x02;
                 }
                 if(!local_optimal_trajectory_.empty() && local_path_valid){
                     if(local_optimal_trajectory_.size() <= 1){
@@ -374,21 +357,21 @@ namespace CB {
                     controller_stratagy_ = TEST_STR;
                 }
                 else if(stratagy_param_ >> 4){
-                    controller_stratagy_ = TO_POINT_STR;
+                    if(out_stratagy == BACKWARD_TO_POSE_CMD){
+                        controller_stratagy_ = BACKWARD_TO_POSE_STR;
+                    }
+                    if(out_stratagy == FORWARD_TO_POSE_CMD){
+                        controller_stratagy_ = FORWARD_TO_POSE_STR;
+                    }
                 }
                 else if(stratagy_param_ >> 3){
-                    controller_stratagy_ = TO_POSE_STR;
+                    controller_stratagy_ = NORMAL_MODE_STR;
                 }
                 else if(stratagy_param_ >> 2){
-                    if(controller_out_stratagy == BACKWARD_TO_POSE_CMD){
-                        controller_stratagy_ = GO_BACKWORD_STR;
-                    }
-                    if(controller_out_stratagy == FORWARD_TO_POSE_CMD){
-                        controller_stratagy_ = GO_FORWARD_STR;
-                    }
+                    controller_stratagy_ = NORMAL_MODE_STR;
                 }
                 else if(stratagy_param_ >> 1){
-                    controller_stratagy_ = ONLY_ROTATE_STR;
+                    controller_stratagy_ = NORMAL_MODE_STR;
                 }
                 else{
                     controller_stratagy_ = NORMAL_MODE_STR;
@@ -397,7 +380,7 @@ namespace CB {
             else{
                 controller_stratagy_ = NO_MOTION_STR;
             }
-            std::cout << "stratagy_param_: " << array_controller_stratagy_[controller_stratagy_] << std::endl;
+            std::cout << "Stratagy: " << array_controller_stratagy_[controller_stratagy_] << std::endl;
             /*--------------------------------pick up target trajectory-----------------------------------------*/
 
             switch(controller_stratagy_){
@@ -413,13 +396,11 @@ namespace CB {
                 case TEST_STR:
                     pick_followed_trajectory_ = TEST_TRAJ;
                     break;
-                case TO_POINT_STR:
+                case FORWARD_TO_POSE_STR:
+                    pick_followed_trajectory_ = FORWARD_TO_GOAL_TRAJ;
                     break;
-                case TO_POSE_STR:
-                    break;
-                case GO_BACKWORD_STR:
-                    break;
-                case GO_FORWARD_STR:
+                case BACKWARD_TO_POSE_STR:
+                    pick_followed_trajectory_ = BACKWARD_TO_GOAL_TRAJ;
                     break;
                 case NO_MOTION_STR:
                     pick_followed_trajectory_ = NO_TRAJ;
@@ -446,16 +427,31 @@ namespace CB {
                     }
                     case TEST_TRAJ:
                     {
-                        if(controller_out_stratagy == LINE_MOVE_CMD){
+                        if(out_stratagy == LINE_MOVE_CMD){
                             mpc_controller_.planLinearTrajectory(target_traj_, robot_pose_, robot_twist_, 1.5);
                         }
-                        else if(controller_out_stratagy == SELF_ROTATE_CMD){
+                        else if(out_stratagy == SELF_ROTATE_CMD){
                             
                         }
-                        else if(controller_out_stratagy == CIRCLE_MOVE_CMD){
+                        else if(out_stratagy == CIRCLE_MOVE_CMD){
                             
                         }
                         update_trajectory_flag = false;
+                        break;
+                    }
+                    case FORWARD_TO_GOAL_TRAJ:
+                    {
+                        geometry_msgs::Pose2D test_goal_pose;
+                        test_goal_pose.set_x(get_outStratagyInfo().data.rsv_0());
+                        test_goal_pose.set_y(get_outStratagyInfo().data.rsv_1());
+                        test_goal_pose.set_theta(0.0);
+                        mpc_controller_.planLinearToPoseTrajectory(target_traj_, robot_pose_, robot_twist_, test_goal_pose);
+                        update_trajectory_flag = false;
+                        break;
+                    }
+                    case BACKWARD_TO_GOAL_TRAJ:
+                    {
+
                         break;
                     }
                     default:
@@ -476,7 +472,7 @@ namespace CB {
             else{
                 if(target_traj_.size() <= 1){
                     if(controller_run_status_ == CONTROL_FREE){
-                        std::cout << "There is no target trajectory with controller_stratagy_: " << controller_stratagy_ << std::endl;
+                        std::cout << "There is no target trajectory with controller_stratagy_: " << array_controller_stratagy_[controller_stratagy_] << std::endl;
                     }
                     else{
                         controller_run_status_ = CONTROL_END;
@@ -487,7 +483,7 @@ namespace CB {
                     path_follow_error = hypot(target_traj_.back().path_point.x - robot_pose_.x(), target_traj_.back().path_point.y - robot_pose_.y());
                     // yaw_follow_error = 
 
-                    if(controller_stratagy_ == GO_BACKWORD_STR || controller_stratagy_ == GO_FORWARD_STR){
+                    if(controller_stratagy_ == FORWARD_TO_POSE_STR || controller_stratagy_ == BACKWARD_TO_POSE_STR){
                         if(time_follow_error > 1.0){ // 轨迹末端时间距离当前时间较远，继续跟踪
                             controller_run_status_ = CONTROL_BUSY;
                         }
@@ -532,7 +528,7 @@ namespace CB {
             }
 
             /*--------------------------------controller execute-----------------------------------------*/
-            std::cout << "controller_run_status_: " << controller_run_status_ << std::endl;
+            std::cout << "controller_run_status_: " << array_controller_status_[controller_run_status_] << std::endl;
             cmd_vel_v = 0.0;
             cmd_vel_w = 0.0;
             if(controller_run_status_ == CONTROL_FREE){
@@ -644,18 +640,12 @@ namespace CB {
                     set_outstratagy(ControllerMode::CIRCLE_MOVE_CMD);
                     break;
                 case 5:
-                    set_outstratagy(ControllerMode::TO_POINT_CMD);
-                    break;
-                case 6:
-                    set_outstratagy(ControllerMode::TO_POSE_CMD);
-                    break;
-                case 7:
-                    set_outstratagy(ControllerMode::BACKWARD_TO_POSE_CMD);
-                    break;
-                case 8:
                     set_outstratagy(ControllerMode::FORWARD_TO_POSE_CMD);
                     break;
-                case 9:
+                case 6:
+                    set_outstratagy(ControllerMode::BACKWARD_TO_POSE_CMD);
+                    break;
+                case 7:
                     set_outstratagy(ControllerMode::UNDEFINED_CMD);
                     break;
                 default:

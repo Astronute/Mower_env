@@ -334,7 +334,7 @@ namespace CB{
     }
 
     // 规划到目标点的轨迹(忽略目标点朝向)
-    void ControllerBase::planLinearToGoalPoseTrajectory(
+    void ControllerBase::planLinearToPoseTrajectory(
         std::vector<TrajPoint> & traj, 
         const geometry_msgs::Pose2D & robot_pose, 
         const geometry_msgs::Twist & robot_twist, 
