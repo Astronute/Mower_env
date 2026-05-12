@@ -60,11 +60,12 @@ namespace CB{
 		RE_START_CMD,
 
 		LINE_MOVE_CMD,
-		SELF_ROTATE_CMD,
+		ROTATE_MOVE_CMD,
 		CIRCLE_MOVE_CMD,
 
 		FORWARD_TO_POSE_CMD,
 		BACKWARD_TO_POSE_CMD,
+		ROTATE_TO_POSE_CMD,
 
 		UNDEFINED_CMD
 	};
@@ -75,6 +76,7 @@ namespace CB{
 		TEST_STR,
 		FORWARD_TO_POSE_STR,
 		BACKWARD_TO_POSE_STR,
+		ROTATE_TO_POSE_STR,
 		NORMAL_MODE_STR,
 		NO_MOTION_STR
 	};
@@ -85,12 +87,13 @@ namespace CB{
 		TEST_TRAJ,
 		FORWARD_TO_GOAL_TRAJ,
 		BACKWARD_TO_GOAL_TRAJ,
+		ROTATE_TO_GOAL_TRAJ,
 		NO_TRAJ
 	};
 
 	extern std::string array_controller_status_[5];
-	extern std::string array_controller_mode_[8];
-	extern std::string array_controller_stratagy_[7];
+	extern std::string array_controller_mode_[9];
+	extern std::string array_controller_stratagy_[8];
 
 	struct OutStratagyInfo{
 		ControllerMode out_stratagy;

@@ -134,6 +134,10 @@ namespace allsubscriber
 			t = t_;
 		}
 
+		void setT(double _t){
+			t = _t;
+		}
+
 		PathPoint path_point;
 
 		double v, w, t;
