@@ -7,6 +7,7 @@ set(PROTO_DIR ${PROJECT_SOURCE_DIR}/../msg/generated)
 
 find_package(Eigen3 REQUIRED)
 find_package(Protobuf REQUIRED)
+find_package(glog REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROTO_DIR})
@@ -59,7 +60,8 @@ target_link_libraries(motion_control
   atomic
   libOsqpEigen.so 
   libosqp.so 
-  libyaml-cpp.a
+  libyaml-cpp.a 
+  glog::glog
 )
 
 target_link_libraries(request_control 

@@ -95,12 +95,15 @@ namespace CB{
 		ABS_ALGO,
 		MPC_ALGO,
 		LQR_ALGO,
+		OPENLOOP_ALGO,
 		NO_ALGO
 	};
 
 	extern std::string array_controller_status_[5];
 	extern std::string array_controller_mode_[9];
 	extern std::string array_controller_stratagy_[8];
+	extern std::string array_followed_trajectory_[7];
+	extern std::string array_picked_controller_[5];
 
 	struct OutStratagyInfo{
 		ControllerMode out_stratagy;

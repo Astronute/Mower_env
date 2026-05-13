@@ -1,5 +1,6 @@
 #include "zmq_controller.h"
 #include "wall_rate.h"
+#include "glog/logging.h"
 
 #include <iostream>
 #include <chrono>
@@ -38,6 +39,24 @@ namespace CB {
 		"NO_MOTION_STR"
 	};
 
+	std::string array_followed_trajectory_[7]{
+		"LOCAL_TRAJ",
+		"EMERG_BRAKE_TRAJ",
+		"TEST_TRAJ",
+		"FORWARD_TO_GOAL_TRAJ",
+		"BACKWARD_TO_GOAL_TRAJ",
+		"ROTATE_TO_GOAL_TRAJ",
+		"NO_TRAJ"
+	};
+
+	std::string array_picked_controller_[5]{
+		"ABS_ALGO",
+		"MPC_ALGO",
+		"LQR_ALGO",
+		"OPENLOOP_ALGO",
+		"NO_ALGO"
+	};
+
     RosController::RosController(): 
         running_(true)
     {
@@ -73,7 +92,7 @@ namespace CB {
 
         if(mpc_controller_.is_initialized()){
             control_frequency_ = mpc_controller_.get_control_rate();
-            std::cout << "control_frequency set to " << control_frequency_ << std::endl;
+            LOG(INFO) << "control_frequency set to " << control_frequency_;
         }
 
         if(!loadParams(yaml_cfg)){
@@ -187,7 +206,7 @@ namespace CB {
         if(filter_config_yaml_["zmq_pub_port"]){
             std::string port = filter_config_yaml_["zmq_pub_port"].as<std::string>();
             zmq_publisher_.initialize(port);
-            std::cout << "controller node publisher bind to: " << port << std::endl;
+            LOG(INFO) << "controller node publisher bind to: " << port;
         }
         else{
             std::cout << "missing param 'zmq_pub_port' " << std::endl;
@@ -202,16 +221,16 @@ namespace CB {
                 return this->zmq_server_callback(request);
             });
             zmq_server_.startRequestHandler();
-            std::cout << "mission execute server bind to: " << port << std::endl;
+            LOG(INFO) << "mission execute server bind to: " << port;
         }
         else{
             std::cout << "missing param 'zmq_server_port' " << std::endl;
             return false;
         }
 
-        std::cout << "now: " << common::toSec(this->now()) << std::endl;
+        LOG(INFO) << "systime now: " << common::toSec(this->now());
 
-        std::cout << "param load success." << std::endl;
+        LOG(INFO) << "param load success.";
         return true;
     }
 
@@ -220,7 +239,7 @@ namespace CB {
             std::lock_guard<std::mutex> lock(out_stratagy_mtx_);
             controller_out_stratagy_.out_stratagy = mode;
         }
-        std::cout << "set_outstratagy set to: " << array_controller_mode_[mode] << std::endl;
+        LOG(INFO) << "set_outstratagy set to: " << array_controller_mode_[mode];
     }
 
     OutStratagyInfo RosController::get_outStratagyInfo(){
@@ -231,6 +250,7 @@ namespace CB {
     void RosController::periodicControl(){
         controller_run_status_ = CONTROL_FREE;
         stratagy_param_ = 0x00;
+        double robot_x, robot_y, robot_yaw, robot_v, robot_w;
         double control_duration = 0;
         bool update_trajectory_flag = true;
         double time_follow_error = 0.0;
@@ -261,7 +281,7 @@ namespace CB {
             SysTimePoint ctrl_sys_now = this->now();
             cmd_twist_.mutable_header()->mutable_stamp()->CopyFrom(common::systimeToProto(ctrl_sys_now));
             if(!sensor_valid){
-                std::cout << "localization dead, stop" << std::endl;
+                LOG(ERROR) << "localization dead, stop";
                 stratagy_param_ |= 0x80;
             }
             else{ // normal situation
@@ -272,6 +292,11 @@ namespace CB {
                     << " , robot_v: " << robot_state[allsubscriber::StateMemberVx] 
                     << " , robot_w: " << robot_state[allsubscriber::StateMemberGz] 
                     << std::endl;
+                robot_x = robot_state[allsubscriber::StateMemberX];
+                robot_y = robot_state[allsubscriber::StateMemberY];
+                robot_yaw = robot_state[allsubscriber::StateMemberYaw];
+                robot_v = robot_state[allsubscriber::StateMemberVx];
+                robot_w = robot_state[allsubscriber::StateMemberGz];
                 robot_pose_.set_x(robot_state[allsubscriber::StateMemberX]);
                 robot_pose_.set_y(robot_state[allsubscriber::StateMemberY]);
                 robot_pose_.set_theta(robot_state[allsubscriber::StateMemberYaw]);
@@ -296,7 +321,7 @@ namespace CB {
                     stratagy_param_ &= ~0x80;
                 }
                 else{
-                    if(std::fabs(robot_state[allsubscriber::StateMemberVx]) < 0.02 && fabs(robot_state[allsubscriber::StateMemberGz]) < 0.02){
+                    if(std::fabs(robot_v) < 0.02 && fabs(robot_w) < 0.02){
                         stratagy_param_ &= ~0x80;
                     }
                     else{
@@ -308,7 +333,7 @@ namespace CB {
                     stratagy_param_ |= 0x40; // 上一控制周期控制器超时
                 }
                 else{
-                    if(std::fabs(robot_state[allsubscriber::StateMemberVx]) < 0.02 && fabs(robot_state[allsubscriber::StateMemberGz]) < 0.02){
+                    if(std::fabs(robot_v) < 0.02 && fabs(robot_w) < 0.02){
                         stratagy_param_ &= ~0x40;
                     }
                 }
@@ -389,7 +414,7 @@ namespace CB {
             else{
                 controller_stratagy_ = NO_MOTION_STR;
             }
-            std::cout << "Stratagy: " << array_controller_stratagy_[controller_stratagy_] << std::endl;
+            LOG(INFO) << "Stratagy: " << array_controller_stratagy_[controller_stratagy_] << " stratagy param: " << static_cast<int>(stratagy_param_);
             /*--------------------------------pick up target trajectory-----------------------------------------*/
 
             switch(controller_stratagy_){
@@ -431,7 +456,9 @@ namespace CB {
                     pick_control_algorithm_ = NO_ALGO;
                     break;
             }
-
+            LOG(INFO) << "Pick control algorithm: " << array_picked_controller_[pick_control_algorithm_] << \
+                        " Followed Traj: " << array_followed_trajectory_[pick_followed_trajectory_];
+            LOG(INFO) << "Update trajectory flag: " << update_trajectory_flag;
             if(update_trajectory_flag){
                 target_traj_.clear();
                 switch(pick_followed_trajectory_){
@@ -443,7 +470,7 @@ namespace CB {
                     }
                     case EMERG_BRAKE_TRAJ:
                     {
-                        mpc_controller_.planBrakeTrajectory(target_traj_, robot_state[allsubscriber::StateMemberVx]);
+                        mpc_controller_.planBrakeTrajectory(target_traj_, robot_v);
                         update_trajectory_flag = false;
                         break;
                     }
@@ -500,7 +527,7 @@ namespace CB {
             else{
                 if(target_traj_.size() <= 1){
                     if(controller_run_status_ == CONTROL_FREE){
-                        std::cout << "There is no target trajectory with controller_stratagy_: " << array_controller_stratagy_[controller_stratagy_] << std::endl;
+                        LOG(WARNING) << "There is no target trajectory with controller_stratagy_: " << array_controller_stratagy_[controller_stratagy_];
                     }
                     else{
                         controller_run_status_ = CONTROL_END;
@@ -510,7 +537,7 @@ namespace CB {
                     last_yaw_follow_error = yaw_follow_error;
                     time_follow_error = target_traj_.back().t - t_now;
                     path_follow_error = hypot(target_traj_.back().path_point.x - robot_pose_.x(), target_traj_.back().path_point.y - robot_pose_.y());
-                    yaw_follow_error = fabs(common::shortest_angular_distance(robot_state[allsubscriber::StateMemberYaw], target_traj_.back().path_point.yaw));
+                    yaw_follow_error = fabs(common::shortest_angular_distance(robot_yaw, target_traj_.back().path_point.yaw));
 
                     if(controller_stratagy_ == FORWARD_TO_POSE_STR || controller_stratagy_ == BACKWARD_TO_POSE_STR){
                         if(time_follow_error > 1.0){ // 轨迹末端时间距离当前时间较远，继续跟踪
@@ -518,11 +545,12 @@ namespace CB {
                         }
                         else if(path_follow_error < 0.08){ // 接近末端时间且距离接近
                             if(controller_run_status_ == CONTROL_FREE){
-                                std::cout << "There is no effective target traj, which need the longer distance to plan! With: " << array_controller_stratagy_[controller_stratagy_] << " Stratagy" << std::endl;
+                                LOG(WARNING) << "There is no effective target traj, which need the longer distance to plan! With: "\
+                                    << array_controller_stratagy_[controller_stratagy_] << " Stratagy";
                             }
                             else{
                                 controller_run_status_ = CONTROL_END;
-                                std::cout << "Finish Straight Trajectory Move:\n The last distance error is:" << path_follow_error << std::endl;
+                                LOG(INFO) << "Finish Straight Trajectory Move:\n The last distance error is:" << path_follow_error;
                             }
                         }
                         else{ // 接近轨迹终端时间，但是距离较远，主动延长终端轨迹点时间
@@ -531,7 +559,7 @@ namespace CB {
                         }
                     }
                     else if(controller_stratagy_ == SLOWLY_STOP_STR || controller_stratagy_ == EMERGENCY_BRAKING_STR){
-                        if(fabs(robot_state[allsubscriber::StateMemberVx]) < 0.01 && fabs(robot_state[allsubscriber::StateMemberGz]) < 0.01){
+                        if(fabs(robot_v) < 0.01 && fabs(robot_w) < 0.01){
                             controller_run_status_ = CONTROL_END;
                         }
                         else{
@@ -546,11 +574,12 @@ namespace CB {
                         else{
                             if(yaw_follow_error - last_yaw_follow_error > -0.001){
                                 if(controller_run_status_ == CONTROL_FREE){
-                                    std::cout << "There is no effective target traj, which need the longer distance to plan! With: " << array_controller_stratagy_[controller_stratagy_] << " Stratagy" << std::endl;
+                                    LOG(WARNING) << "There is no effective target traj, which need the longer distance to plan! With: " \
+                                        << array_controller_stratagy_[controller_stratagy_] << " Stratagy";
                                 }
                                 else{
                                     controller_run_status_ = CONTROL_END;
-                                    std::cout << "Finish Rotate Trajectory:\n The last yaw error is:" << yaw_follow_error << std::endl;
+                                    LOG(INFO) << "Finish Rotate Trajectory:\n The last yaw error is:" << yaw_follow_error;
                                 }
                             }
                             else{
@@ -565,7 +594,8 @@ namespace CB {
                         }
                         else{
                             if(controller_run_status_ == CONTROL_FREE){
-                                std::cout << "There is no effictive target traj. " << "now: " << t_now << " the last point of traj:" << target_traj_.back().t << std::endl;
+                                LOG(WARNING) << "There is no effictive target traj. " << "now: " << t_now \
+                                    << " the last point of traj:" << target_traj_.back().t;
                             }
                             else{
                                 controller_run_status_ = CONTROL_END;
@@ -573,7 +603,7 @@ namespace CB {
                         }
                     }
 
-                    if(std::fabs(robot_state[allsubscriber::StateMemberVx]) < 0.005 && std::fabs(robot_state[allsubscriber::StateMemberGz]) < 0.005 && controller_run_status_ == CONTROL_BUSY){
+                    if(std::fabs(robot_v) < 0.005 && std::fabs(robot_w) < 0.005 && controller_run_status_ == CONTROL_BUSY){
                         motor_timeout++;
                     }
                     else{
@@ -583,11 +613,11 @@ namespace CB {
             }
 
             /*--------------------------------controller execute-----------------------------------------*/
-            std::cout << "controller_run_status_: " << array_controller_status_[controller_run_status_] << std::endl;
+            LOG(INFO) << "controller_run_status_: " << array_controller_status_[controller_run_status_];
             cmd_vel_v = 0.0;
             cmd_vel_w = 0.0;
             if(controller_run_status_ == CONTROL_FREE){
-                std::cout << "CONTROL FREE: No Trajectory Generated" << std::endl;
+                LOG(INFO) << "CONTROL FREE: No Trajectory Generated";
                 cmd_vel_v = 0.0;
                 cmd_vel_w = 0.0;
                 update_trajectory_flag = true;
@@ -616,7 +646,7 @@ namespace CB {
             }
             else if(controller_run_status_ == CONTROL_BUSY){
                 /*--------------------------------Get the Target Point-----------------------------------------*/
-                double t_delta_min = (robot_state[allsubscriber::StateMemberVx] <= 1.01) ? t_delta_min_ : t_delta_max_; //  seconds;
+                double t_delta_min = (robot_v <= 1.01) ? t_delta_min_ : t_delta_max_; //  seconds;
                 double t_delta = t_delta_min;
                 target_t_ = common::toSec(this->now()) + t_delta;
                 mpc_controller_.findTargetTrajTimepoint(target_traj_point_, target_traj_, target_t_);
@@ -639,6 +669,10 @@ namespace CB {
                     cmd_vel_v = 0.0;
                     cmd_vel_w = target_traj_point_.w;
                 }
+                else if(pick_control_algorithm_ == OPENLOOP_ALGO){
+                    cmd_vel_v = target_traj_point_.v;
+                    cmd_vel_w = target_traj_point_.w;
+                }
                 else if(pick_control_algorithm_ == ABS_ALGO){
                     cmd_vel_v = (cmd_vel_v / target_traj_point_.v < 0.7) ? target_traj_point_.v : 0;
                     cmd_vel_w = 0; // Do Not change yaw when braking;
@@ -657,13 +691,13 @@ namespace CB {
                     cmd_twist_.mutable_twist()->mutable_linear()->set_x(0.0);
                     cmd_twist_.mutable_twist()->mutable_linear()->set_y(0.0);
                     cmd_twist_.mutable_twist()->mutable_angular()->set_z(target_traj_point2_.w);
-                    std::cout << "run target vel: " << 0.0 << " w: " << target_traj_point2_.w << std::endl;
+                    LOG(INFO) << "run target vel: " << 0.0 << " w: " << target_traj_point2_.w;
                 }
                 else{
                     cmd_twist_.mutable_twist()->mutable_linear()->set_x(target_traj_point2_.v);
                     cmd_twist_.mutable_twist()->mutable_linear()->set_y(0.0);
                     cmd_twist_.mutable_twist()->mutable_angular()->set_z(cmd_vel_w);
-                    std::cout << "run target vel: " << target_traj_point2_.v << " mpc w: " << cmd_vel_w << std::endl;
+                    LOG(INFO) << "run target vel: " << target_traj_point2_.v << " mpc w: " << cmd_vel_w;
                 }
                 std::string serialized_data;
                 cmd_twist_.SerializeToString(&serialized_data);
@@ -673,12 +707,12 @@ namespace CB {
 
             clock_t time_end_cpu = clock();
             control_duration = (double)(time_end_cpu - time_begin_cpu) / CLOCKS_PER_SEC;
-            std::cout<<"####time: "<<control_duration<<std::endl;
+            LOG(INFO) << "####time: " << control_duration;
             if(control_duration > 1.0 / control_frequency_){
-                std::cout << "motion control loop missed its desired rate of "
+                LOG(ERROR) << "motion control loop missed its desired rate of "
                                   << control_frequency_ << "Hz. "
                                   << "it actually takes " << control_duration
-                                  << " seconds" << std::endl;
+                                  << " seconds";
                 controller_run_status_ = CONTROL_TIMEOUT;
             }
 
@@ -691,6 +725,7 @@ namespace CB {
 
         std::string response;
         std::shared_ptr<pnc_msgs::MotionOutSignal> mode_ptr = std::make_shared<pnc_msgs::MotionOutSignal>();
+        LOG(INFO) << "ZMQ server Received id: " << mode_ptr->id();
         if(mode_ptr->ParseFromArray(request.data(), request.size())){
             switch(mode_ptr->id()){
                 case 0:
@@ -721,12 +756,12 @@ namespace CB {
                     set_outstratagy(ControllerMode::UNDEFINED_CMD);
                     break;
                 default:
-                    std::cout << "Unknown command id: " << mode_ptr->id() << std::endl;
+                    LOG(ERROR) << "ZMQ server received Unknown command id: " << mode_ptr->id();
                     break;
             }
         }
         response = mode_ptr->name();
-        std::cout << "Sending response: " << response << std::endl;
+        LOG(INFO) << "ZMQ server Sending response: " << response;
         return response;
     }
 
