@@ -236,6 +236,7 @@ namespace CB {
         double time_follow_error = 0.0;
         double path_follow_error = 0.0;
         double yaw_follow_error = 0.0;
+        double last_yaw_follow_error = 0.0;
         int motor_timeout = 0;
         double cmd_vel_v = 0.0;
         double cmd_vel_w = 0.0;
@@ -394,30 +395,40 @@ namespace CB {
             switch(controller_stratagy_){
                 case NORMAL_MODE_STR:
                     pick_followed_trajectory_ = LOCAL_TRAJ;
+                    pick_control_algorithm_ = MPC_ALGO;
                     break;
                 case EMERGENCY_BRAKING_STR:
                     pick_followed_trajectory_ = EMERG_BRAKE_TRAJ;
+                    pick_control_algorithm_ = ABS_ALGO;
                     break;
                 case SLOWLY_STOP_STR:
                     pick_followed_trajectory_ = LOCAL_TRAJ;
+                    pick_control_algorithm_ = MPC_ALGO;
                     break;
                 case TEST_STR:
                     pick_followed_trajectory_ = TEST_TRAJ;
+                    pick_control_algorithm_ = MPC_ALGO;
                     break;
                 case FORWARD_TO_POSE_STR:
                     pick_followed_trajectory_ = FORWARD_TO_GOAL_TRAJ;
+                    pick_control_algorithm_ = MPC_ALGO;
                     break;
                 case BACKWARD_TO_POSE_STR:
                     pick_followed_trajectory_ = BACKWARD_TO_GOAL_TRAJ;
+                    pick_control_algorithm_ = MPC_ALGO;
                     break;
                 case ROTATE_TO_POSE_STR:
                     pick_followed_trajectory_ = ROTATE_TO_GOAL_TRAJ;
+                    pick_control_algorithm_ = LQR_ALGO;
                     break;
                 case NO_MOTION_STR:
                     pick_followed_trajectory_ = NO_TRAJ;
+                    pick_control_algorithm_ = NO_ALGO;
                     break;
                 default:
                     std::cout << "No Stratagy Find." << std::endl;
+                    pick_followed_trajectory_ = NO_TRAJ;
+                    pick_control_algorithm_ = NO_ALGO;
                     break;
             }
 
@@ -432,7 +443,7 @@ namespace CB {
                     }
                     case EMERG_BRAKE_TRAJ:
                     {
-                        // target_traj_ = 
+                        mpc_controller_.planBrakeTrajectory(target_traj_, robot_state[allsubscriber::StateMemberVx]);
                         update_trajectory_flag = false;
                         break;
                     }
@@ -467,13 +478,14 @@ namespace CB {
                     }
                     case ROTATE_TO_GOAL_TRAJ:
                     {
-
+                        mpc_controller_.planRotateToPoseTrajectory(target_traj_, robot_pose_, robot_twist_, out_strdata.rsv_2());
+                        update_trajectory_flag = false;
                         break;
                     }
                     default:
                     {
                         update_trajectory_flag = true;
-                        std::cout << "No stratagy generate,Stop plan trajectory picked." << std::endl;
+                        std::cout << "No stratagy generate, no trajectory picked." << std::endl;
                         break;
                     }
                 }
@@ -495,9 +507,10 @@ namespace CB {
                     }
                 }
                 else{
+                    last_yaw_follow_error = yaw_follow_error;
                     time_follow_error = target_traj_.back().t - t_now;
                     path_follow_error = hypot(target_traj_.back().path_point.x - robot_pose_.x(), target_traj_.back().path_point.y - robot_pose_.y());
-                    yaw_follow_error = fabs(common::shortest_angular_distance(robot_yaw, target_traj_.back().path_point.yaw));
+                    yaw_follow_error = fabs(common::shortest_angular_distance(robot_state[allsubscriber::StateMemberYaw], target_traj_.back().path_point.yaw));
 
                     if(controller_stratagy_ == FORWARD_TO_POSE_STR || controller_stratagy_ == BACKWARD_TO_POSE_STR){
                         if(time_follow_error > 1.0){ // 轨迹末端时间距离当前时间较远，继续跟踪
@@ -514,7 +527,7 @@ namespace CB {
                         }
                         else{ // 接近轨迹终端时间，但是距离较远，主动延长终端轨迹点时间
                             controller_run_status_ = CONTROL_BUSY;
-                            target_traj_.back().t = t_now + 5 * t_delta_max_;
+                            target_traj_.back().setT(t_now + 5 * t_delta_max_);
                         }
                     }
                     else if(controller_stratagy_ == SLOWLY_STOP_STR || controller_stratagy_ == EMERGENCY_BRAKING_STR){
@@ -527,7 +540,24 @@ namespace CB {
                         }
                     }
                     else if(controller_stratagy_ == ROTATE_TO_POSE_STR){
-                        
+                        if(t_now <= target_traj_.back().t){
+                            controller_run_status_ = CONTROL_BUSY;
+                        }
+                        else{
+                            if(yaw_follow_error - last_yaw_follow_error > -0.001){
+                                if(controller_run_status_ == CONTROL_FREE){
+                                    std::cout << "There is no effective target traj, which need the longer distance to plan! With: " << array_controller_stratagy_[controller_stratagy_] << " Stratagy" << std::endl;
+                                }
+                                else{
+                                    controller_run_status_ = CONTROL_END;
+                                    std::cout << "Finish Rotate Trajectory:\n The last yaw error is:" << yaw_follow_error << std::endl;
+                                }
+                            }
+                            else{
+                                controller_run_status_ = CONTROL_BUSY;
+                                target_traj_.back().setT(t_now + 5 * t_delta_max_);
+                            }
+                        }
                     }
                     else{
                         if(t_now <= target_traj_.back().t){
@@ -593,13 +623,27 @@ namespace CB {
                 target_t_ = common::toSec(this->now()) + t_delta_min_;
                 mpc_controller_.findTargetTrajTimepoint(target_traj_point2_, target_traj_, target_t_);
                 /*--------------------------------Control-----------------------------------------*/
-                if(!mpc_controller_.run_controller(
-                    matrix_params_q_["slow_mode"], 
-                    matrix_params_r_["slow_mode"], 
-                    robot_pose_, robot_twist_, 
-                    target_traj_point_, target_traj_, 
-                    cmd_vel_v, cmd_vel_w))
-                {
+                if(pick_control_algorithm_ == MPC_ALGO){
+                    if(!mpc_controller_.run_controller(
+                        matrix_params_q_["slow_mode"], 
+                        matrix_params_r_["slow_mode"], 
+                        robot_pose_, robot_twist_, 
+                        target_traj_point_, target_traj_, 
+                        cmd_vel_v, cmd_vel_w))
+                    {
+                        cmd_vel_v = 0.0;
+                        cmd_vel_w = 0.0;
+                    }
+                }
+                else if(pick_control_algorithm_ == LQR_ALGO){
+                    cmd_vel_v = 0.0;
+                    cmd_vel_w = target_traj_point_.w;
+                }
+                else if(pick_control_algorithm_ == ABS_ALGO){
+                    cmd_vel_v = (cmd_vel_v / target_traj_point_.v < 0.7) ? target_traj_point_.v : 0;
+                    cmd_vel_w = 0; // Do Not change yaw when braking;
+                }
+                else if(pick_control_algorithm_ == NO_ALGO){
                     cmd_vel_v = 0.0;
                     cmd_vel_w = 0.0;
                 }
@@ -616,7 +660,6 @@ namespace CB {
                     std::cout << "run target vel: " << 0.0 << " w: " << target_traj_point2_.w << std::endl;
                 }
                 else{
-                    // cmd_twist_.twist.linear.x = cmd_vel_v;
                     cmd_twist_.mutable_twist()->mutable_linear()->set_x(target_traj_point2_.v);
                     cmd_twist_.mutable_twist()->mutable_linear()->set_y(0.0);
                     cmd_twist_.mutable_twist()->mutable_angular()->set_z(cmd_vel_w);

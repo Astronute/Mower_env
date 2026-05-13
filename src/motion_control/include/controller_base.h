@@ -48,7 +48,9 @@ namespace CB{
 
 		void planLinearToPoseTrajectory(std::vector<TrajPoint> & traj, const geometry_msgs::Pose2D & robot_pose, const geometry_msgs::Twist & robot_twist, const geometry_msgs::Pose2D & goal_pose);
 
-		void planBrakeTrajectory(std::vector<TrajPoint> & traj, const geometry_msgs::Pose2D & robot_pose, const geometry_msgs::Twist & robot_twist);
+		void planRotateToPoseTrajectory(std::vector<TrajPoint> & traj, const geometry_msgs::Pose2D & robot_pose, const geometry_msgs::Twist & robot_twist, const double goal_yaw);
+
+		void planBrakeTrajectory(std::vector<TrajPoint> & traj, double robot_vel);
 
 		void fivetimesPlanTraj(std::array<double, 6> & coeff, double t0, double s0, double v0, double a0, double t1, double s1, double v1, double a1);
 
@@ -89,7 +91,9 @@ namespace CB{
 
 		double max_w_, min_w_;
 
-		double max_a_, max_aw_;
+		double max_a_, min_a_;
+
+		double max_aw_;
 
 		double tau_w_;
 		

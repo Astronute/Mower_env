@@ -77,6 +77,13 @@ namespace CB{
             std::cout << "missing param 'max_a' " << std::endl;
             return false;
         }
+        if(controller_config_yaml_["min_a"]){
+            min_a_ = controller_config_yaml_["min_a"].as<double>();
+        }
+        else{
+            std::cout << "missing param 'min_a' " << std::endl;
+            return false;
+        }
         if(controller_config_yaml_["max_aw"]){
             max_aw_ = controller_config_yaml_["max_aw"].as<double>();
         }
@@ -512,12 +519,142 @@ namespace CB{
         }
     }
 
-    void ControllerBase::planBrakeTrajectory(
+    void ControllerBase::planRotateToPoseTrajectory(
         std::vector<TrajPoint> & traj, 
         const geometry_msgs::Pose2D & robot_pose, 
-        const geometry_msgs::Twist & robot_twist
+        const geometry_msgs::Twist & robot_twist, 
+        const double goal_yaw
     ){
-        
+        int direction_flag;
+        double rotate_theta = common::shortest_angular_distance(robot_pose.theta(), goal_yaw);
+        if(rotate_theta > 0){
+            direction_flag = 1.0;
+        }
+        else{
+            direction_flag = -1.0;
+        }
+        double rotate_yaw = std::fabs(rotate_theta);
+        double rotate_max_w = max_w_;
+        double rotate_max_aw = max_aw_ / 1.8;
+        double w_acc_time = rotate_max_w / rotate_max_aw; // 加速时间
+        double w_acc_yaw = 0.5 * w_acc_time * rotate_max_w; // 加速角度
+        double w_dec_time = w_acc_time;
+        double w_dec_yaw = w_acc_yaw;
+        double w_uni_yaw = rotate_yaw - w_acc_yaw - w_dec_yaw;
+        double w_uni_time = w_uni_yaw / rotate_max_w;
+        if (w_uni_yaw < 0) {
+            w_acc_time = sqrt(rotate_yaw / rotate_max_aw);
+            w_acc_yaw = 0.5 * rotate_yaw;
+            w_uni_time = 0;
+            w_uni_yaw = 0;
+            w_dec_time = w_acc_time;
+            w_dec_yaw = w_acc_yaw;
+        }
+
+        double plan_total_time = w_acc_time + w_uni_time + w_dec_time;
+        double plan_w_peak = w_acc_time * rotate_max_aw;
+
+        std::array<double, 6> acc_coeff;
+        std::array<double, 6> uni_coeff;
+        std::array<double, 6> dec_coeff;
+        fivetimesPlanTraj(acc_coeff, 0, 0, 0, 0, w_acc_time, w_acc_yaw, plan_w_peak, 0);
+        fivetimesPlanTraj(uni_coeff, w_acc_time, w_acc_yaw, plan_w_peak, 0, w_acc_time + w_uni_time, w_acc_yaw + w_uni_yaw, plan_w_peak, 0);
+        fivetimesPlanTraj(dec_coeff, w_acc_time + w_uni_time, w_acc_yaw + w_uni_yaw, plan_w_peak, 0, plan_total_time, rotate_yaw, 0, 0);
+
+        TrajPoint target_point;
+        double delta_t = 1.0 / control_rate_;
+        unsigned int num_points = plan_total_time / delta_t;
+        double plan_t = 0.0;
+        double plan_yaw, plan_w;
+        double target_x, target_y, target_yaw, target_s, target_t, target_w;
+
+        // initialize pose and time
+        target_x = robot_pose.x();
+        target_y = robot_pose.y();
+        target_yaw = robot_pose.theta();
+        double begin_t = common::toSec(this->now()) + 5 * delta_t;
+        double calc_t;
+        for(int i=0; i<num_points; ++i){
+            if(plan_t < w_acc_time){
+                plan_yaw = acc_coeff.at(0) + acc_coeff.at(1) * plan_t + acc_coeff.at(2) * pow(plan_t, 2) + acc_coeff.at(3) * pow(plan_t, 3) + acc_coeff.at(4) * pow(plan_t, 4) + acc_coeff.at(5) * pow(plan_t, 5);
+                plan_w = acc_coeff.at(1) + 2 * acc_coeff.at(2) * plan_t + 3 * acc_coeff.at(3) * pow(plan_t, 2) + 4 * acc_coeff.at(4) * pow(plan_t, 3) + 5 * acc_coeff.at(5) * pow(plan_t, 4);
+            }
+            else if(plan_t <= (w_acc_time + w_uni_time)){
+                calc_t = plan_t - w_acc_time;
+                plan_yaw = uni_coeff.at(0) + uni_coeff.at(1) * calc_t + uni_coeff.at(2) * pow(calc_t, 2) + uni_coeff.at(3) * pow(calc_t, 3) + uni_coeff.at(4) * pow(calc_t, 4) + uni_coeff.at(5) * pow(calc_t, 5);
+                plan_w = uni_coeff.at(1) + 2 * uni_coeff.at(2) * calc_t + 3 * uni_coeff.at(3) * pow(calc_t, 2) + 4 * uni_coeff.at(4) * pow(calc_t, 3) + 5 * uni_coeff.at(5) * pow(calc_t, 4);
+            }
+            else{
+                calc_t = plan_t - w_acc_time - w_uni_time;
+                plan_yaw = dec_coeff.at(0) + dec_coeff.at(1) * calc_t + dec_coeff.at(2) * pow(calc_t, 2) + dec_coeff.at(3) * pow(calc_t, 3) + dec_coeff.at(4) * pow(calc_t, 4) + dec_coeff.at(5) * pow(calc_t, 5);
+                plan_w = dec_coeff.at(1) + 2 * dec_coeff.at(2) * calc_t + 3 * dec_coeff.at(3) * pow(calc_t, 2) + 4 * dec_coeff.at(4) * pow(calc_t, 3) + 5 * dec_coeff.at(5) * pow(calc_t, 4);
+            }
+
+            target_w = direction_flag * plan_w;
+            target_yaw = common::normalize_angle(target_yaw + target_w * delta_t);
+            target_t = begin_t + plan_t;
+
+            target_point.path_point = PathPoint(target_x, target_y, 0.0, target_yaw, 0.0, plan_yaw);
+            target_point.t = target_t;
+            target_point.v = 0.0;
+            target_point.w = target_w;
+            traj.push_back(target_point);
+
+            plan_t += delta_t;
+        }
+        /*--------------end-------------------*/
+        target_point.w = 0.0;
+        target_point.path_point.yaw = goal_yaw;
+        for(int i=0; i<20; ++i){
+            target_t = begin_t + plan_t;
+            target_point.t = target_t;
+            traj.push_back(target_point);
+            plan_t += delta_t;
+        }
+    }
+
+    void ControllerBase::planBrakeTrajectory(
+        std::vector<TrajPoint> & traj, 
+        double robot_vel
+    ){
+        double robot_v = robot_vel;
+        double line_max_a = std::fabs(min_a_);
+        double dec_time = robot_v / line_max_a;
+        double dec_dis = 0.5 * robot_v * dec_time;
+        double plan_total_time = dec_time;
+
+        TrajPoint target_point;
+        double delta_t = 1.0 / control_rate_;
+        unsigned int num_points = plan_total_time / delta_t;
+        double begin_t = common::toSec(this->now()) + 5 * delta_t;
+        double plan_t = 0.0;
+        double plan_v;
+        double target_t, target_v;
+
+        for(int i=0; i<num_points; ++i){
+            if(plan_t <= plan_total_time){
+                plan_v = robot_v - line_max_a * plan_t;
+            }
+
+            target_v = plan_v;
+            target_t = begin_t + plan_t;
+
+            target_point.path_point = PathPoint(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            target_point.t = target_t;
+            target_point.v = target_v;
+            target_point.w = 0.0;
+            traj.push_back(target_point);
+
+            plan_t += delta_t;
+        }
+        /*--------------end-------------------*/
+        target_point.v = 0.0;
+        for(int i=0; i<20; ++i){
+            target_t = begin_t + plan_t;
+            target_point.t = target_t;
+            traj.push_back(target_point);
+            plan_t += delta_t;
+        }
     }
 
     void ControllerBase::fivetimesPlanTraj(

@@ -91,6 +91,13 @@ namespace CB{
 		NO_TRAJ
 	};
 
+	enum ControlAlgorithm{
+		ABS_ALGO,
+		MPC_ALGO,
+		LQR_ALGO,
+		NO_ALGO
+	};
+
 	extern std::string array_controller_status_[5];
 	extern std::string array_controller_mode_[9];
 	extern std::string array_controller_stratagy_[8];
@@ -183,6 +190,8 @@ namespace CB{
 		ControllerStratagy controller_stratagy_;
 
 		FollowedTrajectory pick_followed_trajectory_;
+
+		ControlAlgorithm pick_control_algorithm_;
 
 		double t_delta_max_, t_delta_min_;
 

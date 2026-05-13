@@ -12,19 +12,19 @@
 
 	// // 控制器外部命令模式 default: UNDEFINED_CMD
 	// enum ControllerMode{
-	// 	SLOWLY_STOP_CMD,
+	// 	0   SLOWLY_STOP_CMD,
 
-	// 	RE_START_CMD,
+	// 	1   RE_START_CMD,
 
-	// 	LINE_MOVE_CMD,
-	// 	ROTATE_MOVE_CMD,
-	// 	CIRCLE_MOVE_CMD,
+	// 	2   LINE_MOVE_CMD,
+	// 	3   ROTATE_MOVE_CMD,
+	// 	4   CIRCLE_MOVE_CMD,
 
-	// 	FORWARD_TO_POSE_CMD,
-	// 	BACKWARD_TO_POSE_CMD,
-	// 	ROTATE_TO_POSE_CMD,
+	// 	5   FORWARD_TO_POSE_CMD,
+	// 	6   BACKWARD_TO_POSE_CMD,
+	// 	7   ROTATE_TO_POSE_CMD,
 
-	// 	UNDEFINED_CMD
+	// 	8   UNDEFINED_CMD
 	// };
 int main(){
 
@@ -36,11 +36,23 @@ int main(){
 
     pnc_msgs::MotionOutSignal motion_signal;
     motion_signal.mutable_header()->mutable_stamp()->CopyFrom(common::systimeToProto(std::chrono::system_clock::now()));
-    motion_signal.set_id(2);
-    motion_signal.set_name("signal_test");
+    // // FORWARD_TO_POSE_CMD
+    // motion_signal.set_id(5);
+    // motion_signal.set_name("forward to pose");
+    // motion_signal.set_rsv_0(0.0);
+    // motion_signal.set_rsv_1(0.0);
+    // motion_signal.set_rsv_2(0.0);
+    // motion_signal.set_rsv_3(0.0);
+    // motion_signal.set_rsv_4(0.0);
+    // motion_signal.set_rsv_5(0.0);
+    // motion_signal.set_rsv_6(0.0);
+    // motion_signal.set_rsv_7(0.0);
+    // ROTATE_TO_POSE_CMD
+    motion_signal.set_id(7);
+    motion_signal.set_name("rotate to pose");
     motion_signal.set_rsv_0(0.0);
     motion_signal.set_rsv_1(0.0);
-    motion_signal.set_rsv_2(0.0);
+    motion_signal.set_rsv_2(0.3);
     motion_signal.set_rsv_3(0.0);
     motion_signal.set_rsv_4(0.0);
     motion_signal.set_rsv_5(0.0);
