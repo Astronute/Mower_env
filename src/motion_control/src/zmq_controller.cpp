@@ -247,7 +247,7 @@ namespace CB {
             clock_t time_begin_cpu = clock();
 
             ControllerMode out_stratagy = get_outStratagyInfo().out_stratagy;
-
+            pnc_msgs::MotionOutSignal out_strdata = get_outStratagyInfo().data;
             last_stratagy_param_ = stratagy_param_;
 
             /*--------------------------------get robot state-----------------------------------------*/
@@ -439,10 +439,10 @@ namespace CB {
                     case TEST_TRAJ:
                     {
                         if(out_stratagy == LINE_MOVE_CMD){
-                            mpc_controller_.planLinearTrajectory(target_traj_, robot_pose_, robot_twist_, 1.5);
+                            mpc_controller_.planLinearTrajectory(target_traj_, robot_pose_, robot_twist_, out_strdata.rsv_3());
                         }
                         else if(out_stratagy == ROTATE_MOVE_CMD){
-                            
+                            mpc_controller_.planRotateTrajectory(target_traj_, robot_pose_, robot_twist_, out_strdata.rsv_2());
                         }
                         else if(out_stratagy == CIRCLE_MOVE_CMD){
                             
@@ -467,6 +467,7 @@ namespace CB {
                     }
                     case ROTATE_TO_GOAL_TRAJ:
                     {
+
                         break;
                     }
                     default:
@@ -496,7 +497,7 @@ namespace CB {
                 else{
                     time_follow_error = target_traj_.back().t - t_now;
                     path_follow_error = hypot(target_traj_.back().path_point.x - robot_pose_.x(), target_traj_.back().path_point.y - robot_pose_.y());
-                    // yaw_follow_error = 
+                    yaw_follow_error = fabs(common::shortest_angular_distance(robot_yaw, target_traj_.back().path_point.yaw));
 
                     if(controller_stratagy_ == FORWARD_TO_POSE_STR || controller_stratagy_ == BACKWARD_TO_POSE_STR){
                         if(time_follow_error > 1.0){ // 轨迹末端时间距离当前时间较远，继续跟踪
@@ -526,7 +527,7 @@ namespace CB {
                         }
                     }
                     else if(controller_stratagy_ == ROTATE_TO_POSE_STR){
-
+                        
                     }
                     else{
                         if(t_now <= target_traj_.back().t){
@@ -573,6 +574,7 @@ namespace CB {
                 
                 if(controller_stratagy_ == EMERGENCY_BRAKING_STR || controller_stratagy_ == SLOWLY_STOP_STR){
                     controller_run_status_ = CONTROL_END;
+                    // 停车不清除外部策略
                 }
                 else{
                     controller_run_status_ = CONTROL_FREE;

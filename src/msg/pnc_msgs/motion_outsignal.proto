@@ -11,13 +11,13 @@ message MotionOutSignal{
 
     string name = 3;
 
-    double rsv_0 = 4;
+    double rsv_0 = 4; // x
 
-    double rsv_1 = 5;
+    double rsv_1 = 5; // y
 
-    double rsv_2 = 6;
+    double rsv_2 = 6; // yaw
 
-    double rsv_3 = 7;
+    double rsv_3 = 7; // s
 
     double rsv_4 = 8;
 
