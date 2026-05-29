@@ -47,6 +47,14 @@ add_executable(request_control
     ${PROTO_LIST_}
 )
 
+add_executable(test_zmq 
+    ${PROJECT_SOURCE_DIR}/src/test_code/test_zmq_main.cpp
+    ${PROJECT_SOURCE_DIR}/src/zmq_subscriber.cpp
+    ${PROJECT_SOURCE_DIR}/src/zmq_publisher.cpp
+    ${PROJECT_SOURCE_DIR}/src/common.cpp
+    ${PROTO_LIST_}
+)
+
 set_target_properties(motion_control PROPERTIES
     BUILD_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib"
     INSTALL_RPATH "${THIRD_PARTY}/osqp-eigen/lib;${THIRD_PARTY}/osqp/lib"
@@ -69,6 +77,10 @@ target_link_libraries(request_control
   libzmq.so
 )
 
+target_link_libraries(test_zmq 
+  ${PROTOBUF_LIBRARIES}
+  libzmq.so
+)
 
 install(TARGETS
   motion_control
@@ -77,5 +89,10 @@ install(TARGETS
 
 install(TARGETS
   request_control
+  DESTINATION ${PROJECT_INSTALL_PREFIX}/../../../install/${PROJECT_NAME}
+)
+
+install(TARGETS
+  test_zmq
   DESTINATION ${PROJECT_INSTALL_PREFIX}/../../../install/${PROJECT_NAME}
 )

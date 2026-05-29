@@ -27,16 +27,16 @@ void message_callback(const std::string& message, const std::string& topic){
     }
 }
 
-int test_zmq_main(){
+int main(){
     std::cout << "fuck world" << std::endl;
 
     // init publisher
     ZmqPublisher local_traj_pub;
-    local_traj_pub.initialize("tcp://*:5557");
+    local_traj_pub.initialize("ipc:///tmp/hw_zmq_hwdata_pubbb.ipc");
 
     // init subscriber
     SubscriberConfig sub_cfg;
-    sub_cfg.address = "tcp://localhost:5557";
+    sub_cfg.address = "ipc:///tmp/hw_zmq_hwdata_pub.ipc";
     sub_cfg.topics = {"local_traj"};
     std::vector<SubscriberConfig> cfgs = {sub_cfg};
     ZmqSubscriber local_traj_sub;

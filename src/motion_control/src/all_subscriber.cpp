@@ -40,15 +40,18 @@ namespace allsubscriber{
         }
 
         // 定时器线程，处理传感器
-        const std::chrono::duration<double> timespan{1.0 / sample_frequency_};
-        timer_.start(std::chrono::duration_cast<std::chrono::nanoseconds>(timespan), std::bind(&AllSubscriber::periodicUpdate, this));
+        // const std::chrono::duration<double> timespan{1.0 / sample_frequency_};
+        // timer_.start(std::chrono::duration_cast<std::chrono::nanoseconds>(timespan), std::bind(&AllSubscriber::periodicUpdate, this));
         
         return true;
     }
 
     void AllSubscriber::spin(){
-        std::unique_lock<std::mutex> lock(mtx_);
-        cv_.wait(lock, [this]() { return !running_; });
+        // std::unique_lock<std::mutex> lock(mtx_);
+        // cv_.wait(lock, [this]() { return !running_; });
+        while(running_){
+            periodicUpdate();
+        }
     }
 
     bool AllSubscriber::loadParams(const YAML::Node & yaml_cfg){

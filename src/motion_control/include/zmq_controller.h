@@ -91,6 +91,11 @@ namespace CB{
 		NO_TRAJ
 	};
 
+	enum TrajectoryFollowMode{
+		TRAJ_TIME_FOLLOW,
+		TRAJ_PATH_FOLLOW
+	};
+
 	enum ControlAlgorithm{
 		ABS_ALGO,
 		MPC_ALGO,
@@ -193,6 +198,8 @@ namespace CB{
 		ControllerStratagy controller_stratagy_;
 
 		FollowedTrajectory pick_followed_trajectory_;
+
+		TrajectoryFollowMode pick_follow_mode_;
 
 		ControlAlgorithm pick_control_algorithm_;
 

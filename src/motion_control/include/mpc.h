@@ -42,7 +42,18 @@ namespace CB{
             double & cmd_vel_w
         );
 
-        bool run_controller(
+        bool normal_mpc_controller(
+            const std::vector<double> & param_q,
+            const std::vector<double> & param_r,
+            const geometry_msgs::Pose2D & robot_pose,
+            const geometry_msgs::Twist & robot_twist,
+            const TrajPoint & target_point, 
+            const std::vector<TrajPoint> & target_traj,
+            double & cmd_vel_v, 
+            double & cmd_vel_w
+        );
+
+        bool increment_mpc_controller(
             const std::vector<double> & param_q,
             const std::vector<double> & param_r,
             const geometry_msgs::Pose2D & robot_pose,

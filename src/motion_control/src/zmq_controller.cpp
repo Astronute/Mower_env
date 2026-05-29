@@ -495,7 +495,7 @@ namespace CB {
                         test_goal_pose.set_y(get_outStratagyInfo().data.rsv_1());
                         test_goal_pose.set_theta(0.0);
                         mpc_controller_.planLinearToPoseTrajectory(target_traj_, robot_pose_, robot_twist_, test_goal_pose);
-                        update_trajectory_flag = false;
+                        update_trajectory_flag = true;
                         break;
                     }
                     case BACKWARD_TO_GOAL_TRAJ:
@@ -654,7 +654,7 @@ namespace CB {
                 mpc_controller_.findTargetTrajTimepoint(target_traj_point2_, target_traj_, target_t_);
                 /*--------------------------------Control-----------------------------------------*/
                 if(pick_control_algorithm_ == MPC_ALGO){
-                    if(!mpc_controller_.run_controller(
+                    if(!mpc_controller_.increment_mpc_controller(
                         matrix_params_q_["slow_mode"], 
                         matrix_params_r_["slow_mode"], 
                         robot_pose_, robot_twist_, 
