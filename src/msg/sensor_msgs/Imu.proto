@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package sensor_msgs;
+
+import "std_msgs/header.proto";
+import "geometry_msgs/quaternion.proto";
+import "geometry_msgs/vector3.proto";
+
+
+message Imu{
+    std_msgs.Header header = 1;
+
+    geometry_msgs.Quaternion orientation = 2;
+
+    geometry_msgs.Vector3 angular_velocity = 3;
+
+    geometry_msgs.Vector3 linear_acceleration = 4;
+}

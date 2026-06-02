@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package sensor_msgs;
+
+import "std_msgs/header.proto";
+
+
+message WheelEncoder{
+    std_msgs.Header header = 1;
+
+    double whl_vel_FL = 2;
+
+    double whl_vel_FR = 3;
+
+    double whl_vel_RL = 4;
+
+    double whl_vel_RR = 5;
+
+    double whl_plus_FL = 6;
+
+    double whl_plus_FR = 7;
+    
+    double whl_plus_RL = 8;
+
+    double whl_plus_RR = 9;
+}

@@ -319,7 +319,6 @@ namespace turn_on_robot{
                     g_tCarMotorInfo.motor2Speed = _buf[5] << 8 | _buf[6];
                     g_tCarMotorInfo.motor3Speed = _buf[7] << 8 | _buf[8];
                     g_tCarMotorInfo.motor4Speed = _buf[9] << 8 | _buf[10];
-
                     break;
                 }
                 case 0x04:{ //电压
@@ -397,6 +396,58 @@ namespace turn_on_robot{
                     g_tCarImuRawInfo.quaty = _buf[28] << 8 | _buf[29];
                     g_tCarImuRawInfo.quatzSymbol = _buf[30];
                     g_tCarImuRawInfo.quatz = _buf[31] << 8 | _buf[32];
+
+                    sensor_msgs::Imu imu_msg;
+                    geometry_msgs::Quaternion quat;
+                    quat.set_x(g_tCarImuRawInfo.quatx);
+                    quat.set_y(g_tCarImuRawInfo.quaty);
+                    quat.set_z(g_tCarImuRawInfo.quatz);
+                    quat.set_w(g_tCarImuRawInfo.quatw);
+                    if(g_tCarImuRawInfo.quatxSymbol == 0x01){
+                        quat.set_x(-1.0 * g_tCarImuRawInfo.quatx);
+                    }
+                    if(g_tCarImuRawInfo.quatySymbol == 0x01){
+                        quat.set_y(-1.0 * g_tCarImuRawInfo.quaty);
+                    }
+                    if(g_tCarImuRawInfo.quatzSymbol == 0x01){
+                        quat.set_z(-1.0 * g_tCarImuRawInfo.quatz);
+                    }
+                    if(g_tCarImuRawInfo.quatwSymbol == 0x01){
+                        quat.set_w(-1.0 * g_tCarImuRawInfo.quatw);
+                    }
+                    geometry_msgs::Vector3 imu_gyro;
+                    imu_gyro.set_x(g_tCarImuRawInfo.gyrox);
+                    imu_gyro.set_y(g_tCarImuRawInfo.gyroy);
+                    imu_gyro.set_z(g_tCarImuRawInfo.gyroz);
+                    if(g_tCarImuRawInfo.gyroxSymbol == 0x01){
+                        imu_gyro.set_x(-1.0 * g_tCarImuRawInfo.gyrox);
+                    }
+                    if(g_tCarImuRawInfo.gyroySymbol == 0x01){
+                        imu_gyro.set_y(-1.0 * g_tCarImuRawInfo.gyroy);
+                    }
+                    if(g_tCarImuRawInfo.gyrozSymbol == 0x01){
+                        imu_gyro.set_z(-1.0 * g_tCarImuRawInfo.gyroz);
+                    }
+                    geometry_msgs::Vector3 imu_accel;
+                    imu_accel.set_x(g_tCarImuRawInfo.accelx);
+                    imu_accel.set_y(g_tCarImuRawInfo.accely);
+                    imu_accel.set_z(g_tCarImuRawInfo.accelz);
+                    if(g_tCarImuRawInfo.accelxSymbol == 0x01){
+                        imu_accel.set_x(-1.0 * g_tCarImuRawInfo.accelx);
+                    }
+                    if(g_tCarImuRawInfo.accelySymbol == 0x01){
+                        imu_accel.set_y(-1.0 * g_tCarImuRawInfo.accely);
+                    }
+                    if(g_tCarImuRawInfo.accelzSymbol == 0x01){
+                        imu_accel.set_z(-1.0 * g_tCarImuRawInfo.accelz);
+                    }
+                    imu_msg.mutable_orientation()->CopyFrom(quat);
+                    imu_msg.mutable_angular_velocity()->CopyFrom(imu_gyro);
+                    imu_msg.mutable_linear_acceleration()->CopyFrom(imu_accel);
+
+                    std::string serialized_data;
+                    imu_msg.SerializeToString(&serialized_data);
+                    zmq_publisher_.publishMessage("/codbot/imu", serialized_data);
                     break;
                 }
                 case 0x07:{ //车辆类型

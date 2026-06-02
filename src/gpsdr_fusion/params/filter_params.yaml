@@ -1,0 +1,25 @@
+# dr fusion cfg
+
+# 消息订阅端口
+zmq_sub_port0: tcp://127.0.0.1:5556
+
+zmq_sub_port1: tcp://127.0.0.1:5558
+
+zmq_sub_port2: tcp://127.0.0.1:5599
+
+####################################################################### imu #
+
+imu0: /codbot/imu
+
+imu0_port: port0
+
+
+twist0: /codbot/twist
+
+twist0_port: port0
+
+
+gps0: /codbot/gps
+
+gps0_port: port1
+

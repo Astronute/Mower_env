@@ -20,6 +20,7 @@ file(GLOB SRC_LIST_
   ${PROTO_DIR}/geometry_msgs/*.cc
   ${PROTO_DIR}/nav_msgs/*.cc
   ${PROTO_DIR}/std_msgs/*.cc
+  ${PROTO_DIR}/sensor_msgs/*.cc
 )
 
 add_executable(turn_on_robot 

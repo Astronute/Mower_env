@@ -8,6 +8,8 @@
 #include "geometry_msgs/quaternion.pb.h"
 #include "pnc_msgs/point_vec.pb.h"
 #include "pnc_msgs/planning_trajectory.pb.h"
+#include "sensor_msgs/Imu.pb.h"
+#include "sensor_msgs/wheel.pb.h"
 #include "zmq_subscriber.h"
 #include "zmq_publisher.h"
 #include "robot_serial.h"
