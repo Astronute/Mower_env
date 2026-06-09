@@ -297,7 +297,7 @@ namespace turn_on_robot{
                     twist.mutable_twist()->mutable_twist()->mutable_angular()->set_x(0.0);
                     twist.mutable_twist()->mutable_twist()->mutable_angular()->set_y(0.0);
                     twist.mutable_twist()->mutable_twist()->mutable_angular()->set_z(gyro_z);
-                    
+                    // std::cout << "vel_x: " << vel_x << " gyro_z: " << gyro_z << std::endl;
                     if(!sensor_covariance_map_["odom_twist"].empty()){
                         for(double val: sensor_covariance_map_["odom_twist"]){
                             twist.mutable_twist()->mutable_covariance()->Add(val);
@@ -374,6 +374,7 @@ namespace turn_on_robot{
                     else{
                         std::cout << "imu_odom covariance empty message not published" << std::endl;
                     }
+                    break;
                 }
                 case 0x06:{ //imu 原始数据
                     g_tCarImuRawInfo.gyroxSymbol = _buf[3];
@@ -415,36 +416,48 @@ namespace turn_on_robot{
                     if(g_tCarImuRawInfo.quatwSymbol == 0x01){
                         quat.set_w(-1.0 * g_tCarImuRawInfo.quatw);
                     }
+
                     geometry_msgs::Vector3 imu_gyro;
-                    imu_gyro.set_x(g_tCarImuRawInfo.gyrox);
-                    imu_gyro.set_y(g_tCarImuRawInfo.gyroy);
-                    imu_gyro.set_z(g_tCarImuRawInfo.gyroz);
+                    double gyro_x, gyro_y, gyro_z, acc_x, acc_y, acc_z;
+                    gyro_x = g_tCarImuRawInfo.gyrox * 0.001;
+                    gyro_y = g_tCarImuRawInfo.gyroy * 0.001;
+                    gyro_z = g_tCarImuRawInfo.gyroz * 0.001;
                     if(g_tCarImuRawInfo.gyroxSymbol == 0x01){
-                        imu_gyro.set_x(-1.0 * g_tCarImuRawInfo.gyrox);
+                        gyro_x = -1.0 * gyro_x;
                     }
                     if(g_tCarImuRawInfo.gyroySymbol == 0x01){
-                        imu_gyro.set_y(-1.0 * g_tCarImuRawInfo.gyroy);
+                        gyro_y = -1.0 * gyro_y;
                     }
                     if(g_tCarImuRawInfo.gyrozSymbol == 0x01){
-                        imu_gyro.set_z(-1.0 * g_tCarImuRawInfo.gyroz);
+                        gyro_z = -1.0 * gyro_z;
                     }
+                    imu_gyro.set_x(gyro_x);
+                    imu_gyro.set_y(gyro_y);
+                    imu_gyro.set_z(gyro_z);
+
                     geometry_msgs::Vector3 imu_accel;
-                    imu_accel.set_x(g_tCarImuRawInfo.accelx);
-                    imu_accel.set_y(g_tCarImuRawInfo.accely);
-                    imu_accel.set_z(g_tCarImuRawInfo.accelz);
+                    acc_x = g_tCarImuRawInfo.accelx * 0.0001 * 9.8;
+                    acc_y = g_tCarImuRawInfo.accely * 0.0001 * 9.8;
+                    acc_z = g_tCarImuRawInfo.accelz * 0.0001 * 9.8;
                     if(g_tCarImuRawInfo.accelxSymbol == 0x01){
-                        imu_accel.set_x(-1.0 * g_tCarImuRawInfo.accelx);
+                        acc_x = -1.0 * acc_x;
                     }
                     if(g_tCarImuRawInfo.accelySymbol == 0x01){
-                        imu_accel.set_y(-1.0 * g_tCarImuRawInfo.accely);
+                        acc_y = -1.0 * acc_y;
                     }
                     if(g_tCarImuRawInfo.accelzSymbol == 0x01){
-                        imu_accel.set_z(-1.0 * g_tCarImuRawInfo.accelz);
+                        acc_z = -1.0 * acc_z;
                     }
+                    imu_accel.set_x(acc_x);
+                    imu_accel.set_y(acc_y);
+                    imu_accel.set_z(acc_z);
                     imu_msg.mutable_orientation()->CopyFrom(quat);
                     imu_msg.mutable_angular_velocity()->CopyFrom(imu_gyro);
                     imu_msg.mutable_linear_acceleration()->CopyFrom(imu_accel);
-
+                    std::cout << std::fixed << std::setprecision(3) << \
+                        "imu raw: gyro(" << imu_gyro.x() << ", " << imu_gyro.y() << ", " << imu_gyro.z() << ") " <<
+                        "accel(" << imu_accel.x() << ", " << imu_accel.y() << ", " << imu_accel.z() << ") " <<
+                        std::endl;
                     std::string serialized_data;
                     imu_msg.SerializeToString(&serialized_data);
                     zmq_publisher_.publishMessage("/codbot/imu", serialized_data);
@@ -471,8 +484,8 @@ namespace turn_on_robot{
                 cmd_vel_y_ = 0;
                 cmd_vel_w_ = 0;
             }
-            sendCarControlCmd(serial_fd_, cmd_vel_x_, cmd_vel_y_, cmd_vel_w_);
-            std::cout << "cmd_vel: x=" << cmd_vel_x_ << " y=" << cmd_vel_y_ << " w=" << cmd_vel_w_ << " delay=" << ctrl_delay << std::endl;
+            // sendCarControlCmd(serial_fd_, cmd_vel_x_, cmd_vel_y_, cmd_vel_w_);
+            // std::cout << "cmd_vel: x=" << cmd_vel_x_ << " y=" << cmd_vel_y_ << " w=" << cmd_vel_w_ << " delay=" << ctrl_delay << std::endl;
         }
     }
 

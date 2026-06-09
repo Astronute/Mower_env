@@ -63,34 +63,34 @@ typedef struct
 typedef struct
 {
     uint8_t gyroxSymbol;
-    uint8_t gyrox;
+    uint16_t gyrox;
 
     uint8_t gyroySymbol;
-    uint8_t gyroy;
+    uint16_t gyroy;
 
     uint8_t gyrozSymbol;
-    uint8_t gyroz;
+    uint16_t gyroz;
 
     uint8_t accelxSymbol;
-    uint8_t accelx;
+    uint16_t accelx;
 
     uint8_t accelySymbol;
-    uint8_t accely;
+    uint16_t accely;
 
     uint8_t accelzSymbol;
-    uint8_t accelz;
+    uint16_t accelz;
 
     uint8_t quatwSymbol;
-    uint8_t quatw;
+    uint16_t quatw;
 
     uint8_t quatxSymbol;
-    uint8_t quatx;
+    uint16_t quatx;
 
     uint8_t quatySymbol;
-    uint8_t quaty;
+    uint16_t quaty;
 
     uint8_t quatzSymbol;
-    uint8_t quatz;
+    uint16_t quatz;
 
 } carImuRaw_t;
 

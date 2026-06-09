@@ -23,6 +23,7 @@
 #include "geometry_msgs/pose.pb.h"
 #include "sensor_msgs/Imu.pb.h"
 #include "sensor_msgs/wheel.pb.h"
+#include "hardware/hardware.pb.h"
 
 
 using namespace ORB_SLAM3;
@@ -60,7 +61,7 @@ namespace gpsdrfusion{
 
 		void spin();
 
-        bool loadParams(const YAML::Node & yaml_cfg);
+        bool loadParams(const std::string & yaml_cfg_dir);
 
         void imuRawCallback(
             const std::shared_ptr<sensor_msgs::Imu> & msg,
@@ -74,11 +75,15 @@ namespace gpsdrfusion{
         );
 
         void gpsRawCallback(
-            const std::shared_ptr<geometry_msgs::PoseWithCovarianceStamped> & msg,
+            const std::shared_ptr<hardware_message::gps> & msg,
             const std::string & topic_name
         );
 
         void zmq_message_callback(const std::string& message, const std::string& topic);
+
+		auto now() const {
+			return std::chrono::system_clock::now();
+		}
 
     private:
 		YAML::Node filter_config_yaml_;

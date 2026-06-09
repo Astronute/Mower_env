@@ -7,3 +7,6 @@ protoc --proto_path=. --cpp_out=./generated ./pnc_msgs/point_vec.proto ./pnc_msg
 
 # build nav_msgs geometry_msgs std_msgs
 protoc --proto_path=. --cpp_out=./generated ./geometry_msgs/* ./nav_msgs/* ./std_msgs/* ./sensor_msgs/*
+
+# build others
+protoc --proto_path=. --cpp_out=./generated ./hardware/*

@@ -33,6 +33,7 @@ file(GLOB SRC_LIST_
   ${PROTO_DIR}/nav_msgs/*.cc
   ${PROTO_DIR}/std_msgs/*.cc
   ${PROTO_DIR}/sensor_msgs/*.cc
+  ${PROTO_DIR}/hardware/*.cc
 )
 
 add_executable(gpsdr_fusion 
@@ -47,6 +48,11 @@ target_link_libraries(gpsdr_fusion
   atomic
   libyaml-cpp.a
   glog::glog
+)
+
+set_target_properties(gpsdr_fusion PROPERTIES
+    BUILD_RPATH "${THIRD_PARTY}/g2o/lib"
+    INSTALL_RPATH "${THIRD_PARTY}/g2o/lib"
 )
 
 install(TARGETS

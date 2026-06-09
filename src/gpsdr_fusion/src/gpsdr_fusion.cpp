@@ -37,16 +37,31 @@ namespace gpsdrfusion{
     }
 
     bool GPSDRFusion::initialize(const std::string & yaml_cfg_dir){
+        if(!loadParams(yaml_cfg_dir)){
+            LOG(INFO) << "GPSDRFusion loadParams failed";
+            return false;
+        }
+
+        std::string settings_file = "/home/rpdzkj/Mower_env/src/gpsdr_fusion/params/config_rtk.yaml";
+        Settings::ParameterLoader(settings_file);
+        Eigen::VectorXd ekfInitstd = Settings::ekfInitStd();
+        Eigen::VectorXd ekfDynamicNoise = Settings::ekfDynamicNoise();
+        double wheelplus_sf = Settings::ekfWheelplusScalefactor();
+        Eigen::Matrix3d Riv = Settings::Riv();
+        Eigen::Vector3d piv = Settings::piv();
+        Eigen::Vector3d pgv = Settings::pgv();
+
+        mpEstimater = new Estimater(wheelplus_sf, Riv, piv, pgv);
+        return true;
+    }
+
+    bool GPSDRFusion::loadParams(const std::string & yaml_cfg_dir){
         try{
             filter_config_yaml_ = YAML::LoadFile(yaml_cfg_dir);
         } catch(const YAML::Exception& e){
             LOG(ERROR) << "yaml parsing error: " << e.what();
         }
         reset();
-
-        if(!loadParams(filter_config_yaml_)){
-            return false;
-        }
 
         /*-------------------------------- zmq subscribe-----------------------------------------*/
         std::vector<SubscriberConfig> zmq_sub_cfgs;
@@ -156,11 +171,6 @@ namespace gpsdrfusion{
         return true;
     }
 
-    bool GPSDRFusion::loadParams(const YAML::Node & yaml_cfg){
-        
-        return true;
-    }
-
     void GPSDRFusion::imuRawCallback(
         const std::shared_ptr<sensor_msgs::Imu> & msg,
         const std::string & topic_name
@@ -169,16 +179,16 @@ namespace gpsdrfusion{
         Eigen::Vector3d acc(msg->linear_acceleration().x(), msg->linear_acceleration().y(), msg->linear_acceleration().z());
         Eigen::Vector3d gyr(msg->angular_velocity().x(), msg->angular_velocity().y(), msg->angular_velocity().z());
 
-        // // 误差补偿：
-        // // 1. 先补偿比例因子和轴交叉耦合误差
-        // acc = Settings::Accelcalibparams() * acc;
-        // gyr = Settings::Gyrocalibparams() * gyr;
-        // // 2. 再从imu物理坐标系转换到虚拟坐标系
-        // acc = Settings::RbVitualPhysical() * acc;
-        // gyr = Settings::RbVitualPhysical() * gyr;
-        // // 3. 再补偿常值零偏
-        // acc -= Settings::accelBias();
-        // gyr -= Settings::gyroBias();
+        // 误差补偿：
+        // 1. 先补偿比例因子和轴交叉耦合误差
+        acc = Settings::Accelcalibparams() * acc;
+        gyr = Settings::Gyrocalibparams() * gyr;
+        // 2. 再从imu物理坐标系转换到虚拟坐标系
+        acc = Settings::RbVitualPhysical() * acc;
+        gyr = Settings::RbVitualPhysical() * gyr;
+        // 3. 再补偿常值零偏
+        acc -= Settings::accelBias();
+        gyr -= Settings::gyroBias();
 
         SENSOR_DATA::RawImu rawImu;
         rawImu.t = timestamp;
@@ -193,10 +203,29 @@ namespace gpsdrfusion{
         const std::string & topic_name
     ){
         // 传入轮速数据
+        static double whl_plus_l = 0.0, whl_plus_r = 0.0;
+        static double last_time = 0.0;
+
+        double time_now = common::toSec(this->now());
+        double duration = time_now - last_time;
+        if(duration < 1e-4){
+            return;
+        }
+
+        double v = msg->twist().twist().linear().x();
+        double w = msg->twist().twist().angular().z();
+        double whl_v_r, whl_v_l;
+        double L = 0.4; // 轮距
+
         WheelOdometer wheelOdometer;
         wheelOdometer.t = common::toSec(msg->header().stamp());
-        wheelOdometer.whlplus_l = msg->twist().twist().linear().x();
-        wheelOdometer.whlplus_r = msg->twist().twist().linear().x();
+        whl_v_l = v - w * L / 2.0;
+        whl_v_r = v + w * L / 2.0;
+
+        whl_plus_l += whl_v_l * duration;
+        whl_plus_r += whl_v_r * duration;
+        wheelOdometer.whlplus_l = whl_plus_l;
+        wheelOdometer.whlplus_r = whl_plus_r;
         
         SENSOR_DATA::RawWheel rawWheel;
         rawWheel.t = wheelOdometer.t;
@@ -204,22 +233,24 @@ namespace gpsdrfusion{
         rawWheel.whlplus_r = wheelOdometer.whlplus_r;
         mpEstimater->AddRawWheel(rawWheel);
 
+        last_time = time_now;
     }
 
     void GPSDRFusion::gpsRawCallback(
-        const std::shared_ptr<geometry_msgs::PoseWithCovarianceStamped> & msg,
+        const std::shared_ptr<hardware_message::gps> & msg,
         const std::string & topic_name
     ){
         GpsOdometry gpsOdom;
-        gpsOdom.t = common::toSec(msg->header().stamp());
-        gpsOdom.lon = msg->pose().pose().position().x();
-        gpsOdom.lat = msg->pose().pose().position().y();
-        gpsOdom.h = msg->pose().pose().position().z();
+        gpsOdom.t = msg->timestamp() * 1e-3;
+        gpsOdom.lon = msg->longitude();
+        gpsOdom.lat = msg->latitude();
+        gpsOdom.h = 0.0;
+        gpsOdom.hdop = msg->hdop();
         // gpsOdom.vel << gps_msg->twist.twist.linear.x, gps_msg->twist.twist.linear.y, gps_msg->twist.twist.linear.z;
         // gpsOdom.pos_cov(0, 0) = gps_msg->pose.covariance[0];
         // gpsOdom.pos_cov(1, 1) = gps_msg->pose.covariance[7];
         // gpsOdom.pos_cov(2, 2) = gps_msg->pose.covariance[14];
-
+        std::cout << "gps callback, time: " << gpsOdom.t << ", lat: " << gpsOdom.lat << ", lon: " << gpsOdom.lon << ", hdop: " << gpsOdom.hdop << std::endl;
         // 传入GPS数据
         static double last_gps_time = 0;
         if(!mpEstimater->Inited())
@@ -252,9 +283,9 @@ namespace gpsdrfusion{
             }
         }
         else if(topic.compare("/codbot/gps") == 0){
-            std::shared_ptr<geometry_msgs::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::PoseWithCovarianceStamped>();
-            if(pose_ptr->ParseFromArray(message.data(), message.size())){
-                gpsRawCallback(pose_ptr, topic_name);
+            std::shared_ptr<hardware_message::gps> gps_ptr = std::make_shared<hardware_message::gps>();
+            if(gps_ptr->ParseFromArray(message.data(), message.size())){
+                gpsRawCallback(gps_ptr, topic_name);
             }
             else{
                 std::cout << topic_name << " process failed" << std::endl;

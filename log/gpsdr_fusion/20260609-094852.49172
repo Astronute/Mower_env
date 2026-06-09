@@ -1,0 +1,4 @@
+Log file created at: 2026/06/09 09:48:52
+Running on machine: ubuntu2404
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I0609 09:48:52.975744 49172 gpsdr_fusion_node.cpp:14] GPSDRFusion node start

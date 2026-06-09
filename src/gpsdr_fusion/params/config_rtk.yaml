@@ -1,0 +1,112 @@
+%YAML:1.0
+
+File.version: "1.0"
+
+# accel bias
+IMU.ba_x: 0.00
+IMU.ba_y: 0.00
+IMU.ba_z: 0.00
+
+# gyro bias
+IMU.bg_x: 0.0
+IMU.bg_y: 0.0
+IMU.bg_z: 0.0
+
+# accel scale factor and cross-axis error parameters
+IMU.accel_calib_params: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: f
+   data: [1.00, 0.00, 0.00,
+          0.00, 1.00, 0.00,
+          0.00, 0.00, 1.00]
+
+# gyro scale factor and cross-axis error parameters
+IMU.gyro_calib_params: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: f
+   data: [1.0, 0.0, 0.0,
+          0.0, 1.0, 0.0,
+          0.0, 0.0, 1.0]
+
+# Transformation from imu (phycical) frame to imu virtual fram
+# imu virtual fram is defined as : X:right, Y:forward, Z:up
+IMU.b_vitual_phycical: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: f
+   data: [0.0, -1.0, 0.0, 0.0,
+         1.0, 0.0, 0.0, 0.0,
+         0.0, 0.0, 1.0, 0.0,
+         0.0, 0.0, 0.0, 1.0]
+
+# Ekf : px,py,pz, pitch, yaw, bgx, bgz, sgz, wheel_sf, riv_x
+EKF.init_std: !!opencv-matrix
+   rows: 1
+   cols: 10
+   dt: f
+   data: [0.03, 0.03, 0.05, 0.1, 0.1, 0.03, 0.03, 0.002, 0.01, 0.5]  # OK
+
+EKF.dynamic_noise: !!opencv-matrix
+   rows: 1
+   cols: 10
+   dt: f
+   data: [0.01, 0.01, 0.01, 0.02, 0.02, 0.003, 0.003, 0.0001, 0.002, 0.003]
+
+#
+PreintegNoise_pos: 0.03 # 0.03
+PreintegNoise_yaw: 0.05
+PreintegNoise_wheelsf: 0.05
+
+EKF.WheelplusScalefactor: 1.016
+EkF.UseWheelspeed: 1
+
+EKF.InitAlignDist: 2.0
+
+RTK.Interval: 0.1
+
+# mounting params from IMU to vehicle
+IMU.piv: !!opencv-matrix
+   rows: 1
+   cols: 3
+   dt: f
+   data: [0.0, 0.0, 0.0]
+
+IMU.riv: !!opencv-matrix
+   rows: 1
+   cols: 3
+   dt: f
+   data: [0.0, 0.0, 0.0]   # data: 0815
+
+# level arm: from gps to vehicle
+IMU.pgv: !!opencv-matrix
+   rows: 1
+   cols: 3
+   dt: f
+   data: [0, -0.34, -0.12]
+
+# Imu.dT : 0.10   # data: 0815_3 
+# Imu.dT : 0.15   # data: 0901 
+Imu.dT : 0.0   # data:
+
+View.RtkpathSize: 2000
+View.EkfpathSize: 4000
+
+GpsFile: "gps.txt"
+EkfFile: "ekf.txt"
+
+#project root path
+System.ProjectRoot: "/home/clink/Gitee/gps_test_x3/rtk_generation_2"
+
+Viewer.bViewer: 1
+
+Output.Coordinate: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: f
+   data: [0.0, -1.0, 0.0,
+         1.0, 0.0, 0.0,
+         0.0, 0.0, 1.0]
+
+WheelSlipProcess: 1

@@ -1,0 +1,220 @@
+syntax = "proto3";
+package hardware_message;
+
+message nmea_utc_time {
+  uint32 year=1;	//年份
+	uint32 month=2;	//月份
+	uint32 date=3;	//日期
+	uint32 hour=4; 	//小时
+	uint32 min=5; 	//分钟
+	uint32 sec=6; 	//秒钟
+	uint32 pse=7;
+}
+
+message gps {
+  uint64      timestamp = 15;//时间辍，ms为单位
+  uint32      valid = 1;  //1：数据有效  0：数据无效   ----ksxt
+  uint32      systick = 2;  //底板系统tick ---获取数据时间
+  uint32      fs = 3; //指示当前定位质量 4:ok 5:no-Ok   ----gngga
+  nmea_utc_time      times_utc = 4;//utc时间   -----ksxt
+  double      latitude = 5; //纬度   ----ksxt
+  double      longitude = 6;   //经度   ---ksxt
+  float       ref_east = 7;    //东北天;东向相对位置 单位m   -----ksxt
+  float       ref_north = 8;    //东北天;北向相对位置 单位m  -----ksxt
+  float       east_vel = 9;	//东向速度;小数点后3位，单位：Km/h -----ksxt
+  float       north_vel = 10;	//北向速度-----ksxt
+  double      speed = 11;    //地面速率 (000.0 - 999.9节，前面的0也将被传输)   ---gnrmc
+  double      direction = 12;   //地面航向 (000.0~359.9度，以正北为参考基准)   ----gnrmc
+  uint32      numSv = 13;         //用于定位的卫星数目 ----gngga
+  float       hdop = 14;        //水平精度因子------gngga
+
+}
+
+message ultrasonic {
+  uint64      timestamp = 6;//时间辍，ms为单位
+  uint32 systick = 1;//底板系统tick ---获取数据时间
+  uint32 ultrasonic_1 = 2;/*超声波1 单位mm*/
+  uint32 ultrasonic_2 = 3;/*超声波2 单位mm*/
+	uint32 ultrasonic_3 = 4;/*超声波3 单位mm*/
+  uint32 ultrasonic_version = 5;/*超声波版本号*/
+}
+
+message imu {
+  uint64      timestamp = 11;//时间辍，ms为单位
+  uint32 sys_tick = 1;
+  float acc_x = 2;
+  float acc_y = 3;
+  float acc_z = 4;
+  float gyro_x = 5;
+  float gyro_y = 6;
+  float gyro_z = 7;
+  float pitch  = 8;
+  float yaw    = 9;
+  float roll   = 10;
+}
+
+message motor {
+  uint64      timestamp = 10;//时间辍，ms为单位
+  uint32 sys_tick = 1;
+  uint32  motor_current_l = 2;
+  uint32  motor_current_r = 3;
+  uint32  motor_current_c = 4;
+  uint32 motor_status_l = 5; //0：异常；1：正常
+  uint32 motor_status_r = 6;
+  uint32 motor_status_c = 7;
+  float odom_l = 8;
+  float odom_r = 9;
+}
+
+message power {
+  uint64      timestamp = 15;//时间辍，ms为单位
+  uint32 systick = 1; //系统tick
+  uint32 battery_state = 2;//电池状态 0--在桩不充电  1--在桩满电   2--在桩充电中  3--不在桩馈电 4--不在桩正常放电 5--电量极低 6--初始化默认状态
+  float voltage_battery = 3;
+  float voltage_charging = 4;
+  float current_charging = 5;
+  bool  sys_power = 6;	//系统电源
+  bool  lift_5v = 7;//抬升5V电源
+  bool  tube_12v = 8;
+  bool  tube_5v = 9;
+  bool  x3m_5v = 10;
+  bool  rtk3v3 = 11;
+  bool  mpu = 12;
+  bool  charger = 13;
+  bool  motor = 14;
+}
+
+message docksig {
+  uint32 intensity = 1;
+}
+
+message system {
+  uint64      timestamp = 11;//时间辍，ms为单位
+  uint32 systick = 1; //系统tick
+  float  temperature_battery = 2;//电池温度
+  float  temperature_board = 3;//机舱温度
+  uint32 flag_contour = 4;//围线板有效位标志
+  uint32 flag_stop = 5;//急停标志
+  uint32   l_lift = 6;//左抬升信号
+  uint32   r_lift = 7;//右抬升信号
+  uint32   rain = 8;//雨水
+  uint32   bat_batch = 9;//电池舱盖
+  uint32   rtk_base_signal = 10;//基站电台信号，1:基站信号强 2：中等 3：弱 4：断开
+
+}
+
+message heartbeat {
+  string topic = 1;//例如：/bscore/healthy
+  string instance_id = 2;//预留
+  //bool is_alive = 0; //0：离线，1：在线
+  //map<string, string> health_metrics = 1;//
+}
+
+
+
+
+// message twist{
+//   float velocity = 1;
+//   float angle = 2;
+// }
+
+
+// message Motorctrl{
+//   uint32 speed = 1;   //速度
+//   bool  brake = 2;   //刹车  1刹车
+//   bool  dir   = 3;   //方向  左轮：0前进 1后退，右轮：0后退 1前进
+
+
+// }
+
+// message SubHwMotorctrl{
+//   Motorctrl left_motor = 1;		//左行走电机
+//   Motorctrl right_motor = 2;   //右行走电机
+//   Motorctrl cut_motor = 3;		//割草电机
+
+// }
+
+// message Otherctrl{
+//   bool hwsw_charge = 1;				//充电口控制：0：打开，1：关闭
+//   bool hwsw_light_camera = 2;		    //补光灯控制：0：打开，1：关闭
+//   uint32 hwsw_light_tail = 3;			//尾灯状态控制：定义待补充
+// 	uint32 hwbump_threshold = 4;		//底板自主碰撞阈值:默认900
+
+// }
+
+// message bscoreHwCtrlMsg {
+//   oneof content {
+//     SubHwMotorctrl hwmotorctrl = 1;	//电机控制
+// 	  power          hwpowerctrl =2;	//电源控制
+// 	  Otherctrl      otherctrl   = 3;   //其他控制
+
+//   }
+
+// }
+
+
+
+message hwDispContent {
+  uint64      timestamp = 14;//时间辍，ms为单位
+  uint32 led_ver   = 1;  //led板子程序版本
+
+  bool   rain = 2;
+  bool   rev  = 3;
+  bool   button_stop   = 4;    //急停按钮
+	bool   button_any    = 5;    //任意按钮
+	bool   button_start  = 6;    //start组合按钮
+	bool   button_home   = 7;    //home组合按钮
+	bool   button_power  = 8;    //关机组合按钮
+	bool   button_ok_long  = 9;  //OK长按按钮
+
+  bool   button_r_lift   = 10;  //右抬升
+  bool   button_l_lift   = 11; //左
+  uint32 motor_power_state   	= 12;  //面板电机电源状态 0 关；1开；2急停关；3抬升关
+  uint32 rev2                	= 13;  //预留
+
+}
+
+
+message hwerror
+{
+    uint64      timestamp = 33;//时间辍，ms为单位
+    bool em_stop		                = 1; /*急停故障*/
+    bool machine_skid							  = 2; /*打滑故障*/
+    bool machine_trapped						= 3; /*被困故障*/
+    bool inout											= 4; /*出界故障*/
+    bool motor_driver_left					= 5; /*左轮电机驱动故障*/
+    bool motor_driver_right			    = 6; /*右轮电机驱动故障*/
+    bool motor_driver_blade					= 7; /*割草电机驱动故障*/
+    bool motor_block_left						= 8; /*左轮电机堵转故障*/
+
+    bool motor_block_right					= 9; /*右轮电机堵转故障*/
+    bool motor_block_blade					= 10; /*割草电机堵转故障*/
+    bool overturn										= 11; /*机器翻转故障*/
+    bool lift											  = 12; /*抬升报警*, 左抬升 占第 0位, 右抬升 占第1位*/
+    bool high_temperature						= 13; /*高温报警*/
+    bool low_temperature						= 14; /*低温报警*/
+    bool fence_missing							= 15; /*围线丢失故障*/
+    bool rain											  = 16; /*雨天报警*/
+
+    bool lower_power								= 17; /*低电报警*/
+    bool feed_power									= 18; /*馈电报警*/
+    bool imu											  = 19; /*imu数据更新故障*/
+    bool odom											  = 20; /*里程计更新故障*/
+    bool motor_l_current            = 21; /*左轮电机电流故障*/
+    bool motor_r_current            = 22; /*右轮电机电流故障*/
+    bool blade_current              = 23; /*割草电机电流故障*/
+    bool machine_collision					= 24; /*机器碰撞检测*/
+
+    bool blade_missing							= 25; /*刀片缺失*/
+    bool led											  = 26; /*数码管故障*/
+    bool battery_hatch							= 27; /*电池仓打开*/
+    bool low_power_work_warning			= 28; /*低电工作报警*/
+    bool fence_sensor              	= 29; /*围线检测板异常*/
+    bool rain_unwork								= 30; //雨水不能工作
+    bool temp_unwork								= 31; //过温不能工作
+    bool battery_abnormal						= 32; //保护板失效
+}
+
+
+
+

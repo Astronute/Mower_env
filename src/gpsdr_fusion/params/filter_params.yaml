@@ -7,6 +7,8 @@ zmq_sub_port1: tcp://127.0.0.1:5558
 
 zmq_sub_port2: tcp://127.0.0.1:5599
 
+zmq_sub_port3: ipc:///tmp/hw_zmq_hwdata_pub.ipc
+
 ####################################################################### imu #
 
 imu0: /codbot/imu
@@ -19,7 +21,7 @@ twist0: /codbot/twist
 twist0_port: port0
 
 
-gps0: /codbot/gps
+gps0: /hw/sensors/gpsdata
 
-gps0_port: port1
+gps0_port: port3
 
